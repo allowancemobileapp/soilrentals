@@ -33,11 +33,12 @@ import { suggestRentalAmount } from "@/app/actions";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import type { SuggestRentalAmountOutput } from "@/ai/flows/suggest-rental-amount";
 import { useToast } from "@/hooks/use-toast";
+import { NIGERIAN_STATES } from "@/lib/nigerian-states";
 
 const formSchema = z.object({
   shopName: z.string().min(2, { message: "Shop name must be at least 2 characters." }),
   tenantName: z.string().min(2, { message: "Tenant name must be at least 2 characters." }),
-  state: z.string().length(2, { message: "State must be a 2-letter abbreviation." }),
+  state: z.string().min(2, { message: "State must be selected." }),
   monthlyRent: z.coerce.number().min(0, { message: "Monthly rent must be a positive number." }),
   dueDate: z.date(),
   propertyType: z.enum(["apartment", "house", "shop", "office"]),
@@ -66,8 +67,8 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
     } : {
       shopName: "",
       tenantName: "",
-      state: "CA",
-      monthlyRent: 1000,
+      state: "Lagos",
+      monthlyRent: 50000,
       dueDate: new Date(),
       propertyType: "shop",
       bedrooms: 0,
@@ -149,9 +150,20 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>State</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g., CA" {...field} />
-                </FormControl>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a state" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {NIGERIAN_STATES.map((state) => (
+                      <SelectItem key={state} value={state}>
+                        {state}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -259,9 +271,9 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
               name="monthlyRent"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Monthly Rent (USD)</FormLabel>
+                  <FormLabel>Monthly Rent (NGN)</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="e.g., 2500" {...field} />
+                    <Input type="number" placeholder="e.g., 250000" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

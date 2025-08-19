@@ -12,7 +12,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const SuggestRentalAmountInputSchema = z.object({
-  state: z.string().describe('The state where the property is located.'),
+  state: z.string().describe('The state in Nigeria where the property is located.'),
   propertyType: z.string().describe('The type of property (e.g., apartment, house).'),
   bedrooms: z.number().describe('The number of bedrooms in the property.'),
   bathrooms: z.number().describe('The number of bathrooms in the property.'),
@@ -22,7 +22,7 @@ const SuggestRentalAmountInputSchema = z.object({
 export type SuggestRentalAmountInput = z.infer<typeof SuggestRentalAmountInputSchema>;
 
 const SuggestRentalAmountOutputSchema = z.object({
-  suggestedRentalAmount: z.number().describe('The suggested monthly rental amount in USD.'),
+  suggestedRentalAmount: z.number().describe('The suggested monthly rental amount in NGN.'),
   reasoning: z.string().describe('The reasoning behind the suggested rental amount.'),
 });
 export type SuggestRentalAmountOutput = z.infer<typeof SuggestRentalAmountOutputSchema>;
@@ -35,9 +35,9 @@ const prompt = ai.definePrompt({
   name: 'suggestRentalAmountPrompt',
   input: {schema: SuggestRentalAmountInputSchema},
   output: {schema: SuggestRentalAmountOutputSchema},
-  prompt: `You are an expert real estate analyst specializing in rental property valuation.
+  prompt: `You are an expert real estate analyst specializing in rental property valuation in Nigeria.
 
-  Based on the following property details, suggest a competitive monthly rental amount in USD and provide a brief reasoning for your suggestion.
+  Based on the following property details, suggest a competitive monthly rental amount in NGN and provide a brief reasoning for your suggestion.
 
   State: {{{state}}}
   Property Type: {{{propertyType}}}
@@ -46,7 +46,7 @@ const prompt = ai.definePrompt({
   Square Footage: {{{squareFootage}}}
   Description: {{{description}}}
 
-  Consider recent rental trends, comparable properties, and the overall condition and amenities of the property.
+  Consider recent rental trends, comparable properties, and the overall condition and amenities of the property within the Nigerian context.
   The suggestedRentalAmount should be a number (do not include currency symbols or commas), and the reasoning should be clear and concise.
   `,
 });

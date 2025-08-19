@@ -11,14 +11,15 @@ import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
 import RentalForm from "./rental-form";
+import { NIGERIAN_STATES } from "@/lib/nigerian-states";
 
 // Mock Data
 const mockRentals: Rental[] = [
-  { id: '1', shopName: 'Greenleaf Goods', tenantName: 'Alice Johnson', state: 'CA', monthlyRent: 2500, dueDate: new Date(), propertyType: 'shop', bedrooms: 0, bathrooms: 1, squareFootage: 800, description: 'Prime corner location in a busy shopping district.' },
-  { id: '2', shopName: 'The Book Nook', tenantName: 'Bob Williams', state: 'NY', monthlyRent: 4200, dueDate: add(new Date(), { days: 5 }), propertyType: 'shop', bedrooms: 0, bathrooms: 1, squareFootage: 1200, description: 'Cozy bookstore with high foot traffic.' },
-  { id: '3', shopName: 'Crafty Creations', tenantName: 'Charlie Brown', state: 'TX', monthlyRent: 1800, dueDate: add(new Date(), { days: 12 }), propertyType: 'shop', bedrooms: 0, bathrooms: 1, squareFootage: 650, description: 'Small stall in a popular craft market.' },
-  { id: '4', shopName: 'Urban Apparel', tenantName: 'Diana Prince', state: 'FL', monthlyRent: 3100, dueDate: sub(new Date(), { days: 2 }), propertyType: 'shop', bedrooms: 0, bathrooms: 1, squareFootage: 1000, description: 'Modern boutique in a trendy neighborhood.' },
-  { id: '5', shopName: 'Tech Hub', tenantName: 'Ethan Hunt', state: 'CA', monthlyRent: 3500, dueDate: add(new Date(), { days: 20 }), propertyType: 'office', bedrooms: 3, bathrooms: 2, squareFootage: 1500, description: 'Spacious office with multiple rooms.' },
+  { id: '1', shopName: 'Lagos Island Ventures', tenantName: 'Chioma Okoro', state: 'Lagos', monthlyRent: 350000, dueDate: new Date(), propertyType: 'shop', bedrooms: 0, bathrooms: 1, squareFootage: 800, description: 'Prime corner location in a busy shopping district.' },
+  { id: '2', shopName: 'Abuja Book Haven', tenantName: 'Musa Bello', state: 'FCT', monthlyRent: 600000, dueDate: add(new Date(), { days: 5 }), propertyType: 'shop', bedrooms: 0, bathrooms: 1, squareFootage: 1200, description: 'Cozy bookstore with high foot traffic.' },
+  { id: '3', shopName: 'Kano Craft Market', tenantName: 'Amina Sani', state: 'Kano', monthlyRent: 150000, dueDate: add(new Date(), { days: 12 }), propertyType: 'shop', bedrooms: 0, bathrooms: 1, squareFootage: 650, description: 'Small stall in a popular craft market.' },
+  { id: '4', shopName: 'Port Harcourt Styles', tenantName: 'Emeka Nwosu', state: 'Rivers', monthlyRent: 250000, dueDate: sub(new Date(), { days: 2 }), propertyType: 'shop', bedrooms: 0, bathrooms: 1, squareFootage: 1000, description: 'Modern boutique in a trendy neighborhood.' },
+  { id: '5', shopName: 'Ibadan Tech Solutions', tenantName: 'Yemi Adewale', state: 'Oyo', monthlyRent: 450000, dueDate: add(new Date(), { days: 20 }), propertyType: 'office', bedrooms: 3, bathrooms: 2, squareFootage: 1500, description: 'Spacious office with multiple rooms.' },
 ];
 
 export default function Dashboard() {
@@ -84,7 +85,7 @@ export default function Dashboard() {
   };
   
   const exportToCSV = () => {
-    const headers = ["Shop Name", "Tenant", "State", "Rent", "Due Date"];
+    const headers = ["Shop Name", "Tenant", "State", "Rent (NGN)", "Due Date"];
     const csvContent = [
       headers.join(","),
       ...filteredRentals.map(r => [
@@ -164,8 +165,9 @@ export default function Dashboard() {
                 <SelectValue placeholder="Filter by state" />
               </SelectTrigger>
               <SelectContent>
-                {uniqueStates.map(state => (
-                  <SelectItem key={state} value={state}>{state === 'all' ? 'All States' : state}</SelectItem>
+                <SelectItem value="all">All States</SelectItem>
+                {NIGERIAN_STATES.map(state => (
+                  <SelectItem key={state} value={state}>{state}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
