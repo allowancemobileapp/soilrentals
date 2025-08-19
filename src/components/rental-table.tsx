@@ -48,7 +48,7 @@ export default function RentalTable({ rentals, onEdit, onDelete }: RentalTablePr
             <TableHead>Shop Name</TableHead>
             <TableHead className="hidden md:table-cell">Tenant</TableHead>
             <TableHead className="hidden md:table-cell">State</TableHead>
-            <TableHead>Rent (NGN)</TableHead>
+            <TableHead>Rent</TableHead>
             <TableHead>Due Date</TableHead>
             <TableHead>
               <span className="sr-only">Actions</span>
@@ -62,7 +62,10 @@ export default function RentalTable({ rentals, onEdit, onDelete }: RentalTablePr
                 <TableCell className="font-medium">{rental.shopName}</TableCell>
                 <TableCell className="hidden md:table-cell">{rental.tenantName}</TableCell>
                 <TableCell className="hidden md:table-cell">{rental.state}</TableCell>
-                <TableCell>₦{rental.monthlyRent.toLocaleString()}</TableCell>
+                <TableCell>
+                  ₦{rental.rentAmount.toLocaleString()}
+                  <span className="text-xs text-muted-foreground">/{rental.rentalType === 'monthly' ? 'mo' : 'yr'}</span>
+                </TableCell>
                 <TableCell>
                   <Badge variant={isPast(rental.dueDate) ? "destructive" : "outline"}>
                     {format(rental.dueDate, "MMM dd, yyyy")}

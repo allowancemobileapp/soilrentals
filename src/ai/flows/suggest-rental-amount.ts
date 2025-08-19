@@ -18,11 +18,12 @@ const SuggestRentalAmountInputSchema = z.object({
   bathrooms: z.number().describe('The number of bathrooms in the property.'),
   squareFootage: z.number().describe('The square footage of the property.'),
   description: z.string().describe('A detailed description of the property including any amenities.'),
+  rentalType: z.enum(['monthly', 'yearly']).describe('The rental payment frequency.'),
 });
 export type SuggestRentalAmountInput = z.infer<typeof SuggestRentalAmountInputSchema>;
 
 const SuggestRentalAmountOutputSchema = z.object({
-  suggestedRentalAmount: z.number().describe('The suggested monthly rental amount in NGN.'),
+  suggestedRentalAmount: z.number().describe('The suggested rental amount in NGN for the specified rental type.'),
   reasoning: z.string().describe('The reasoning behind the suggested rental amount.'),
 });
 export type SuggestRentalAmountOutput = z.infer<typeof SuggestRentalAmountOutputSchema>;
@@ -37,7 +38,7 @@ const prompt = ai.definePrompt({
   output: {schema: SuggestRentalAmountOutputSchema},
   prompt: `You are an expert real estate analyst specializing in rental property valuation in Nigeria.
 
-  Based on the following property details, suggest a competitive monthly rental amount in NGN and provide a brief reasoning for your suggestion.
+  Based on the following property details, suggest a competitive {{{rentalType}}} rental amount in NGN and provide a brief reasoning for your suggestion.
 
   State: {{{state}}}
   Property Type: {{{propertyType}}}
@@ -45,6 +46,7 @@ const prompt = ai.definePrompt({
   Bathrooms: {{{bathrooms}}}
   Square Footage: {{{squareFootage}}}
   Description: {{{description}}}
+  Rental Type: {{{rentalType}}}
 
   Consider recent rental trends, comparable properties, and the overall condition and amenities of the property within the Nigerian context.
   The suggestedRentalAmount should be a number (do not include currency symbols or commas), and the reasoning should be clear and concise.

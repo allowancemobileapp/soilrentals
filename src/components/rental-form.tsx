@@ -28,18 +28,20 @@ import { CalendarIcon, Loader2, Sparkles, Wand2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import type { PropertyType, Rental } from "@/lib/types";
+import type { PropertyType, Rental, RentalType } from "@/lib/types";
 import { suggestRentalAmount } from "@/app/actions";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import type { SuggestRentalAmountOutput } from "@/ai/flows/suggest-rental-amount";
 import { useToast } from "@/hooks/use-toast";
 import { NIGERIAN_STATES } from "@/lib/nigerian-states";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
 const formSchema = z.object({
   shopName: z.string().min(2, { message: "Shop name must be at least 2 characters." }),
   tenantName: z.string().min(2, { message: "Tenant name must be at least 2 characters." }),
   state: z.string().min(2, { message: "State must be selected." }),
-  monthlyRent: z.coerce.number().min(0, { message: "Monthly rent must be a positive number." }),
+  rentAmount: z.coerce.number().min(0, { message: "Rent amount must be a positive number." }),
+  rentalType: z.enum(['monthly', 'yearly']),
   dueDate: z.date(),
   propertyType: z.enum(["apartment", "house", "shop", "office"]),
   bedrooms: z.coerce.number().int().min(0),
@@ -68,7 +70,8 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
       shopName: "",
       tenantName: "",
       state: "Lagos",
-      monthlyRent: 50000,
+      rentAmount: 50000,
+      rentalType: "monthly",
       dueDate: new Date(),
       propertyType: "shop",
       bedrooms: 0,
@@ -84,7 +87,7 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
   
   const handleSuggestRent = async () => {
     const values = form.getValues();
-    const validation = formSchema.pick({ state: true, propertyType: true, bedrooms: true, bathrooms: true, squareFootage: true, description: true }).safeParse(values);
+    const validation = formSchema.pick({ state: true, propertyType: true, bedrooms: true, bathrooms: true, squareFootage: true, description: true, rentalType: true }).safeParse(values);
     
     if (!validation.success) {
       toast({
@@ -100,7 +103,7 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
     try {
       const result = await suggestRentalAmount(validation.data);
       setSuggestion(result);
-      form.setValue('monthlyRent', result.suggestedRentalAmount);
+      form.setValue('rentAmount', result.suggestedRentalAmount);
     } catch (error) {
        toast({
         variant: "destructive",
@@ -260,18 +263,53 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
               <Sparkles className="h-4 w-4" />
               <AlertTitle>AI Suggestion</AlertTitle>
               <AlertDescription>
-                {suggestion.reasoning} We've updated the monthly rent field with our suggestion.
+                {suggestion.reasoning} We've updated the rent amount field with our suggestion.
               </AlertDescription>
             </Alert>
           )}
+          
+          <FormField
+            control={form.control}
+            name="rentalType"
+            render={({ field }) => (
+              <FormItem className="space-y-3">
+                <FormLabel>Rental Type</FormLabel>
+                <FormControl>
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    className="flex flex-row space-x-4"
+                  >
+                    <FormItem className="flex items-center space-x-2 space-y-0">
+                      <FormControl>
+                        <RadioGroupItem value="monthly" />
+                      </FormControl>
+                      <FormLabel className="font-normal">
+                        Monthly
+                      </FormLabel>
+                    </FormItem>
+                    <FormItem className="flex items-center space-x-2 space-y-0">
+                      <FormControl>
+                        <RadioGroupItem value="yearly" />
+                      </FormControl>
+                      <FormLabel className="font-normal">
+                        Yearly
+                      </FormLabel>
+                    </FormItem>
+                  </RadioGroup>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
              <FormField
               control={form.control}
-              name="monthlyRent"
+              name="rentAmount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Monthly Rent (NGN)</FormLabel>
+                  <FormLabel>Rent Amount (NGN)</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="e.g., 250000" {...field} />
                   </FormControl>

@@ -3,7 +3,8 @@ export interface Rental {
   shopName: string;
   tenantName: string;
   state: string;
-  monthlyRent: number;
+  rentAmount: number;
+  rentalType: 'monthly' | 'yearly';
   dueDate: Date;
   propertyType: 'apartment' | 'house' | 'shop' | 'office';
   bedrooms: number;
@@ -13,3 +14,4 @@ export interface Rental {
 }
 
 export type PropertyType = Rental['propertyType'];
+export type RentalType = Rental['rentalType'];
