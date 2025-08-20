@@ -31,7 +31,7 @@ export default function Dashboard() {
       try {
         setIsLoading(true);
         const fetchedRentals = await getRentals();
-        setRentals(fetchedRentals);
+        setRentals(fetchedRentals || []);
       } catch (error) {
         toast({
           variant: "destructive",
@@ -45,17 +45,19 @@ export default function Dashboard() {
     fetchRentals();
   }, [toast]);
 
-  const totalRentals = rentals.length;
-  const topState = rentals.length > 0
-    ? Object.entries(rentals.reduce((acc, r) => ({ ...acc, [r.state]: (acc[r.state] || 0) + 1 }), {} as Record<string, number>))
+  const safeRentals = rentals || [];
+
+  const totalRentals = safeRentals.length;
+  const topState = safeRentals.length > 0
+    ? Object.entries(safeRentals.reduce((acc, r) => ({ ...acc, [r.state]: (acc[r.state] || 0) + 1 }), {} as Record<string, number>))
       .sort((a, b) => b[1] - a[1])[0][0]
     : "N/A";
-  const upcomingDues = rentals.filter(r => {
+  const upcomingDues = safeRentals.filter(r => {
       const dueDate = parseISO(r.due_date);
       return dueDate > new Date() && dueDate <= add(new Date(), { days: 30 });
     }).length;
 
-  const filteredRentals = rentals.filter(rental => {
+  const filteredRentals = safeRentals.filter(rental => {
     const searchLower = search.toLowerCase();
     const matchesSearch = rental.shop_name.toLowerCase().includes(searchLower) ||
       rental.tenant_name.toLowerCase().includes(searchLower);
