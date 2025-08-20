@@ -7,11 +7,8 @@ export async function middleware(request: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    // If variables are not set, you can either return an error page
-    // or simply pass through without running the Supabase logic.
-    // For now, we'll log an error and allow the request to pass.
     console.error("Supabase environment variables are not set.")
-    // Depending on your app's needs, you might want to redirect to an error page.
+    // Pass through without authentication logic if Supabase is not configured
     return NextResponse.next()
   }
 
@@ -23,12 +20,12 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // if user is not logged in, redirect to login page
+  // if user is not logged in, and not on login/signup, redirect to login
   if (!user && pathname !== '/login' && pathname !== '/signup') {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // if user is logged in, redirect to dashboard
+  // if user is logged in, and on login/signup, redirect to home
   if (user && (pathname === '/login' || pathname === '/signup')) {
     return NextResponse.redirect(new URL('/', request.url))
   }
