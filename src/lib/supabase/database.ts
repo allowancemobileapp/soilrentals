@@ -1,3 +1,5 @@
+'use server';
+
 import { createClient } from './server';
 import type { Rental, RentalInsert, RentalUpdate } from '@/lib/types';
 
