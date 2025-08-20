@@ -10,12 +10,17 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Logo } from '@/components/logo'
 
 export default function SignupPage() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
       <Card className="mx-auto max-w-sm">
-        <CardHeader>
+        <CardHeader className="items-center">
+          <Link href="/" className="flex items-center gap-2">
+            <Logo />
+            <span className="sr-only">Soil Rentals</span>
+          </Link>
           <CardTitle className="text-xl">Sign Up</CardTitle>
           <CardDescription>
             Enter your information to create an account
