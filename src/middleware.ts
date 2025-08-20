@@ -2,6 +2,19 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
+  // Check for environment variables
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    // If variables are not set, you can either return an error page
+    // or simply pass through without running the Supabase logic.
+    // For now, we'll log an error and allow the request to pass.
+    console.error("Supabase environment variables are not set.")
+    // Depending on your app's needs, you might want to redirect to an error page.
+    return NextResponse.next()
+  }
+
   const { supabase, response } = createClient(request)
 
   const {
