@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, User, LogOut } from "lucide-react";
+import { User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,6 +13,26 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { signOut } from "@/app/auth/actions";
 
+function Logo() {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-7 w-7 text-primary"
+        >
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" />
+            <path d="M2 12l10 5 10-5" />
+        </svg>
+    )
+}
+
+
 export default function Header() {
   return (
     <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
@@ -21,8 +41,8 @@ export default function Header() {
           href="#"
           className="flex items-center gap-2 text-lg font-semibold md:text-base"
         >
-          <Home className="h-6 w-6 text-primary" />
-          <span className="font-headline font-bold">Soil Rentals</span>
+          <Logo />
+          <span className="font-bold text-lg">Soil Rentals</span>
         </a>
       </nav>
       <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
