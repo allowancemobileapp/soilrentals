@@ -1,4 +1,4 @@
-import { Home, User } from "lucide-react";
+import { Home, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { signOut } from "@/app/auth/actions";
 
 export default function Header() {
   return (
@@ -44,7 +45,14 @@ export default function Header() {
             <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuItem>Support</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Logout</DropdownMenuItem>
+            <form action={signOut}>
+                <button type="submit" className="w-full">
+                    <DropdownMenuItem>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Logout</span>
+                    </DropdownMenuItem>
+                </button>
+            </form>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

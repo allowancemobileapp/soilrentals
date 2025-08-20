@@ -1,15 +1,22 @@
-import { supabase } from './client';
+import { createClient } from './server';
 import type { Rental, RentalInsert, RentalUpdate } from '@/lib/types';
 
-// Temporarily use a hardcoded owner_id for development
-// In a real app, this would come from the authenticated user
-const FAKE_OWNER_ID = '12345';
+const getOwnerId = async (): Promise<string> => {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        throw new Error("User not authenticated");
+    }
+    return user.id;
+}
 
 export const getRentals = async (): Promise<Rental[]> => {
+  const supabase = await createClient();
+  const owner_id = await getOwnerId();
   const { data, error } = await supabase
     .from('rentals')
     .select('*')
-    .eq('owner_id', FAKE_OWNER_ID)
+    .eq('owner_id', owner_id)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -17,14 +24,13 @@ export const getRentals = async (): Promise<Rental[]> => {
     throw new Error('Failed to fetch rentals.');
   }
   
-  // Note: Supabase returns date/time strings in ISO 8601 format.
-  // The frontend components expect Date objects or string formats they can parse.
-  // We'll handle date conversion in the components themselves.
   return data || [];
 };
 
 export const addRental = async (rental: RentalInsert): Promise<Rental> => {
-   const rentalWithOwner = { ...rental, owner_id: FAKE_OWNER_ID };
+   const supabase = await createClient();
+   const owner_id = await getOwnerId();
+   const rentalWithOwner = { ...rental, owner_id };
 
   const { data, error } = await supabase
     .from('rentals')
@@ -41,6 +47,7 @@ export const addRental = async (rental: RentalInsert): Promise<Rental> => {
 
 
 export const updateRental = async (id: string, rental: RentalUpdate): Promise<Rental> => {
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('rentals')
     .update(rental)
@@ -56,6 +63,7 @@ export const updateRental = async (id: string, rental: RentalUpdate): Promise<Re
 };
 
 export const deleteRental = async (id: string): Promise<void> => {
+  const supabase = await createClient();
   const { error } = await supabase
     .from('rentals')
     .delete()
