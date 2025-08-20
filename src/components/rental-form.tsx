@@ -27,8 +27,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Loader2, Sparkles, Wand2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import type { PropertyType, Rental, RentalType } from "@/lib/types";
+import { format, parseISO } from "date-fns";
+import type { Rental, RentalInsert, RentalUpdate } from "@/lib/types";
 import { suggestRentalAmount } from "@/app/actions";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import type { SuggestRentalAmountOutput } from "@/ai/flows/suggest-rental-amount";
@@ -37,16 +37,16 @@ import { NIGERIAN_STATES } from "@/lib/nigerian-states";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
 const formSchema = z.object({
-  shopName: z.string().min(2, { message: "Shop name must be at least 2 characters." }),
-  tenantName: z.string().min(2, { message: "Tenant name must be at least 2 characters." }),
+  shop_name: z.string().min(2, { message: "Shop name must be at least 2 characters." }),
+  tenant_name: z.string().min(2, { message: "Tenant name must be at least 2 characters." }),
   state: z.string().min(2, { message: "State must be selected." }),
-  rentAmount: z.coerce.number().min(0, { message: "Rent amount must be a positive number." }),
-  rentalType: z.enum(['monthly', 'yearly']),
-  dueDate: z.date(),
-  propertyType: z.enum(["apartment", "house", "shop", "office"]),
+  rent_amount: z.coerce.number().min(0, { message: "Rent amount must be a positive number." }),
+  rental_type: z.enum(['monthly', 'yearly']),
+  due_date: z.date(),
+  property_type: z.enum(["apartment", "house", "shop", "office"]),
   bedrooms: z.coerce.number().int().min(0),
   bathrooms: z.coerce.number().int().min(0),
-  squareFootage: z.coerce.number().int().min(1),
+  square_footage: z.coerce.number().int().min(1),
   description: z.string().min(10, { message: "Description must be at least 10 characters." }),
 });
 
@@ -54,7 +54,7 @@ type RentalFormValues = z.infer<typeof formSchema>;
 
 interface RentalFormProps {
   rental?: Rental | null;
-  onSave: (data: Rental) => void;
+  onSave: (data: RentalInsert | RentalUpdate) => void;
 }
 
 export default function RentalForm({ rental, onSave }: RentalFormProps) {
@@ -66,28 +66,56 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: rental ? {
       ...rental,
+      due_date: parseISO(rental.due_date),
     } : {
-      shopName: "",
-      tenantName: "",
+      shop_name: "",
+      tenant_name: "",
       state: "Lagos",
-      rentAmount: 50000,
-      rentalType: "monthly",
-      dueDate: new Date(),
-      propertyType: "shop",
+      rent_amount: 50000,
+      rental_type: "monthly",
+      due_date: new Date(),
+      property_type: "shop",
       bedrooms: 0,
       bathrooms: 1,
-      squareFootage: 500,
+      square_footage: 500,
       description: ""
     },
   });
+  
+  React.useEffect(() => {
+    if (rental) {
+      form.reset({
+        ...rental,
+        due_date: parseISO(rental.due_date),
+      });
+    } else {
+      form.reset({
+        shop_name: "",
+        tenant_name: "",
+        state: "Lagos",
+        rent_amount: 50000,
+        rental_type: "monthly",
+        due_date: new Date(),
+        property_type: "shop",
+        bedrooms: 0,
+        bathrooms: 1,
+        square_footage: 500,
+        description: ""
+      });
+    }
+  }, [rental, form]);
 
   const onSubmit = (data: RentalFormValues) => {
-    onSave({ ...data, id: rental?.id || "" });
+    const dataWithIsoDate = {
+      ...data,
+      due_date: data.due_date.toISOString(),
+    }
+    onSave(dataWithIsoDate);
   };
   
   const handleSuggestRent = async () => {
     const values = form.getValues();
-    const validation = formSchema.pick({ state: true, propertyType: true, bedrooms: true, bathrooms: true, squareFootage: true, description: true, rentalType: true }).safeParse(values);
+    const validation = formSchema.pick({ state: true, property_type: true, bedrooms: true, bathrooms: true, square_footage: true, description: true, rental_type: true }).safeParse(values);
     
     if (!validation.success) {
       toast({
@@ -97,13 +125,22 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
       });
       return;
     }
+    
+    const { property_type: propertyType, square_footage: squareFootage, rental_type: rentalType, ...rest} = validation.data;
+
+    const suggestionInput = {
+        ...rest,
+        propertyType,
+        squareFootage,
+        rentalType,
+    };
 
     setIsSuggesting(true);
     setSuggestion(null);
     try {
-      const result = await suggestRentalAmount(validation.data);
+      const result = await suggestRentalAmount(suggestionInput);
       setSuggestion(result);
-      form.setValue('rentAmount', result.suggestedRentalAmount);
+      form.setValue('rent_amount', result.suggestedRentalAmount);
     } catch (error) {
        toast({
         variant: "destructive",
@@ -121,7 +158,7 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="shopName"
+            name="shop_name"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Shop Name</FormLabel>
@@ -134,7 +171,7 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
           />
           <FormField
             control={form.control}
-            name="tenantName"
+            name="tenant_name"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Tenant Name</FormLabel>
@@ -173,7 +210,7 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
           />
           <FormField
             control={form.control}
-            name="propertyType"
+            name="property_type"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Property Type</FormLabel>
@@ -224,7 +261,7 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
           />
            <FormField
             control={form.control}
-            name="squareFootage"
+            name="square_footage"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Square Footage</FormLabel>
@@ -270,7 +307,7 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
           
           <FormField
             control={form.control}
-            name="rentalType"
+            name="rental_type"
             render={({ field }) => (
               <FormItem className="space-y-3">
                 <FormLabel>Rental Type</FormLabel>
@@ -306,7 +343,7 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
              <FormField
               control={form.control}
-              name="rentAmount"
+              name="rent_amount"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Rent Amount (NGN)</FormLabel>
@@ -319,7 +356,7 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
             />
             <FormField
               control={form.control}
-              name="dueDate"
+              name="due_date"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Next Due Date</FormLabel>

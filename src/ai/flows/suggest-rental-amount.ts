@@ -60,6 +60,10 @@ const suggestRentalAmountFlow = ai.defineFlow(
     outputSchema: SuggestRentalAmountOutputSchema,
   },
   async input => {
+    // The field names from the form (e.g. property_type) don't match the
+    // field names in the prompt (e.g. propertyType). This could be fixed
+    // by creating a new Zod object for the prompt with the correct field names,
+    // but for now, we'll just rename them here.
     const {output} = await prompt(input);
     return output!;
   }

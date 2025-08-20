@@ -4,7 +4,7 @@ import * as React from "react";
 import { Calendar, Home, Loader2, MapPin, TrendingUp, Download, PlusCircle, Search, FileDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Rental } from "@/lib/types";
-import { add, sub } from "date-fns";
+import { add, parseISO } from "date-fns";
 import RentalTable from "./rental-table";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -12,59 +12,110 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
 import RentalForm from "./rental-form";
 import { NIGERIAN_STATES } from "@/lib/nigerian-states";
+import { getRentals, addRental, updateRental, deleteRental } from "@/lib/supabase/database";
+import { useToast } from "@/hooks/use-toast";
+import type { RentalInsert, RentalUpdate } from '@/lib/types';
 
-// Mock Data
-const mockRentals: Rental[] = [
-  { id: '1', shopName: 'Lagos Island Ventures', tenantName: 'Chioma Okoro', state: 'Lagos', rentAmount: 350000, rentalType: 'monthly', dueDate: new Date(), propertyType: 'shop', bedrooms: 0, bathrooms: 1, squareFootage: 800, description: 'Prime corner location in a busy shopping district.' },
-  { id: '2', shopName: 'Abuja Book Haven', tenantName: 'Musa Bello', state: 'FCT', rentAmount: 600000, rentalType: 'monthly', dueDate: add(new Date(), { days: 5 }), propertyType: 'shop', bedrooms: 0, bathrooms: 1, squareFootage: 1200, description: 'Cozy bookstore with high foot traffic.' },
-  { id: '3', shopName: 'Kano Craft Market', tenantName: 'Amina Sani', state: 'Kano', rentAmount: 150000, rentalType: 'monthly', dueDate: add(new Date(), { days: 12 }), propertyType: 'shop', bedrooms: 0, bathrooms: 1, squareFootage: 650, description: 'Small stall in a popular craft market.' },
-  { id: '4', shopName: 'Port Harcourt Styles', tenantName: 'Emeka Nwosu', state: 'Rivers', rentAmount: 250000, rentalType: 'monthly', dueDate: sub(new Date(), { days: 2 }), propertyType: 'shop', bedrooms: 0, bathrooms: 1, squareFootage: 1000, description: 'Modern boutique in a trendy neighborhood.' },
-  { id: '5', shopName: 'Ibadan Tech Solutions', tenantName: 'Yemi Adewale', state: 'Oyo', rentAmount: 450000, rentalType: 'monthly', dueDate: add(new Date(), { days: 20 }), propertyType: 'office', bedrooms: 3, bathrooms: 2, squareFootage: 1500, description: 'Spacious office with multiple rooms.' },
-];
 
 export default function Dashboard() {
-  const [rentals, setRentals] = React.useState<Rental[]>(mockRentals);
+  const [rentals, setRentals] = React.useState<Rental[]>([]);
   const [search, setSearch] = React.useState("");
   const [stateFilter, setStateFilter] = React.useState("all");
-  const [isClient, setIsClient] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [editingRental, setEditingRental] = React.useState<Rental | null>(null);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+  const { toast } = useToast();
 
   React.useEffect(() => {
-    setIsClient(true);
-  }, []);
+    const fetchRentals = async () => {
+      try {
+        setIsLoading(true);
+        const fetchedRentals = await getRentals();
+        setRentals(fetchedRentals);
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Error fetching data",
+          description: "Could not load rentals from the database.",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchRentals();
+  }, [toast]);
 
   const totalRentals = rentals.length;
   const topState = rentals.length > 0
     ? Object.entries(rentals.reduce((acc, r) => ({ ...acc, [r.state]: (acc[r.state] || 0) + 1 }), {} as Record<string, number>))
       .sort((a, b) => b[1] - a[1])[0][0]
     : "N/A";
-  const upcomingDues = rentals.filter(r => r.dueDate > new Date() && r.dueDate <= add(new Date(), { days: 30 })).length;
-
-  const uniqueStates = ['all', ...Array.from(new Set(mockRentals.map(r => r.state)))];
+  const upcomingDues = rentals.filter(r => {
+      const dueDate = parseISO(r.due_date);
+      return dueDate > new Date() && dueDate <= add(new Date(), { days: 30 });
+    }).length;
 
   const filteredRentals = rentals.filter(rental => {
     const searchLower = search.toLowerCase();
-    const matchesSearch = rental.shopName.toLowerCase().includes(searchLower) ||
-      rental.tenantName.toLowerCase().includes(searchLower);
+    const matchesSearch = rental.shop_name.toLowerCase().includes(searchLower) ||
+      rental.tenant_name.toLowerCase().includes(searchLower);
     const matchesState = stateFilter === 'all' || rental.state === stateFilter;
     return matchesSearch && matchesState;
   });
   
-  const handleAddRental = (newRental: Omit<Rental, 'id'>) => {
-    const rentalToAdd: Rental = { ...newRental, id: (rentals.length + 1).toString() };
-    setRentals(prev => [...prev, rentalToAdd]);
-    setIsSheetOpen(false);
+  const handleAddRental = async (newRentalData: RentalInsert) => {
+    try {
+      const newRental = await addRental(newRentalData);
+      setRentals(prev => [newRental, ...prev]);
+      setIsSheetOpen(false);
+       toast({
+        title: "Success",
+        description: "Rental added successfully.",
+      });
+    } catch (error) {
+       toast({
+        variant: "destructive",
+        title: "Error",
+        description: (error as Error).message,
+      });
+    }
   };
 
-  const handleUpdateRental = (updatedRental: Rental) => {
-    setRentals(prev => prev.map(r => r.id === updatedRental.id ? updatedRental : r));
-    setEditingRental(null);
-    setIsSheetOpen(false);
+  const handleUpdateRental = async (updatedRentalData: RentalUpdate) => {
+    if (!editingRental) return;
+    try {
+      const updatedRental = await updateRental(editingRental.id, updatedRentalData);
+      setRentals(prev => prev.map(r => r.id === updatedRental.id ? updatedRental : r));
+      setEditingRental(null);
+      setIsSheetOpen(false);
+       toast({
+        title: "Success",
+        description: "Rental updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: (error as Error).message,
+      });
+    }
   };
   
-  const handleDeleteRental = (id: string) => {
-    setRentals(prev => prev.filter(r => r.id !== id));
+  const handleDeleteRental = async (id: string) => {
+    try {
+      await deleteRental(id);
+      setRentals(prev => prev.filter(r => r.id !== id));
+      toast({
+        title: "Success",
+        description: "Rental deleted successfully.",
+      });
+    } catch (error) {
+       toast({
+        variant: "destructive",
+        title: "Error",
+        description: (error as Error).message,
+      });
+    }
   };
 
   const handleEditClick = (rental: Rental) => {
@@ -89,12 +140,12 @@ export default function Dashboard() {
     const csvContent = [
       headers.join(","),
       ...filteredRentals.map(r => [
-        `"${r.shopName}"`,
-        `"${r.tenantName}"`,
+        `"${r.shop_name}"`,
+        `"${r.tenant_name}"`,
         r.state,
-        r.rentAmount,
-        r.rentalType,
-        r.dueDate.toLocaleDateString(),
+        r.rent_amount,
+        r.rental_type,
+        new Date(r.due_date).toLocaleDateString(),
       ].join(","))
     ].join("\n");
 
@@ -110,7 +161,7 @@ export default function Dashboard() {
   };
 
 
-  if (!isClient) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-full">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -189,7 +240,7 @@ export default function Dashboard() {
                 </SheetHeader>
                 <RentalForm 
                   rental={editingRental}
-                  onSave={editingRental ? handleUpdateRental : handleAddRental}
+                  onSave={editingRental ? (data) => handleUpdateRental(data) : (data) => handleAddRental(data as RentalInsert)}
                 />
               </SheetContent>
             </Sheet>

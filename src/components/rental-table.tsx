@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { format, isPast } from 'date-fns';
+import { format, isPast, parseISO } from 'date-fns';
 
 interface RentalTableProps {
   rentals: Rental[];
@@ -57,18 +57,20 @@ export default function RentalTable({ rentals, onEdit, onDelete }: RentalTablePr
         </TableHeader>
         <TableBody>
           {rentals.length > 0 ? (
-            rentals.map((rental) => (
+            rentals.map((rental) => {
+              const dueDate = parseISO(rental.due_date);
+              return (
               <TableRow key={rental.id}>
-                <TableCell className="font-medium">{rental.shopName}</TableCell>
-                <TableCell className="hidden md:table-cell">{rental.tenantName}</TableCell>
+                <TableCell className="font-medium">{rental.shop_name}</TableCell>
+                <TableCell className="hidden md:table-cell">{rental.tenant_name}</TableCell>
                 <TableCell className="hidden md:table-cell">{rental.state}</TableCell>
                 <TableCell>
-                  ₦{rental.rentAmount.toLocaleString()}
-                  <span className="text-xs text-muted-foreground">/{rental.rentalType === 'monthly' ? 'mo' : 'yr'}</span>
+                  ₦{rental.rent_amount.toLocaleString()}
+                  <span className="text-xs text-muted-foreground">/{rental.rental_type === 'monthly' ? 'mo' : 'yr'}</span>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={isPast(rental.dueDate) ? "destructive" : "outline"}>
-                    {format(rental.dueDate, "MMM dd, yyyy")}
+                  <Badge variant={isPast(dueDate) ? "destructive" : "outline"}>
+                    {format(dueDate, "MMM dd, yyyy")}
                   </Badge>
                 </TableCell>
                 <TableCell>
@@ -99,7 +101,7 @@ export default function RentalTable({ rentals, onEdit, onDelete }: RentalTablePr
                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription>
                           This action cannot be undone. This will permanently delete the
-                          rental record for {rental.shopName}.
+                          rental record for {rental.shop_name}.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -112,11 +114,11 @@ export default function RentalTable({ rentals, onEdit, onDelete }: RentalTablePr
                   </AlertDialog>
                 </TableCell>
               </TableRow>
-            ))
+            )})
           ) : (
             <TableRow>
               <TableCell colSpan={6} className="h-24 text-center">
-                No results found.
+                No results found. Start by adding a new rental.
               </TableCell>
             </TableRow>
           )}
