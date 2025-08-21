@@ -26,7 +26,7 @@ export const getRentals = async (): Promise<Rental[]> => {
   return data || [];
 };
 
-export const addRental = async (rental: Omit<RentalInsert, 'id' | 'created_at' | 'updated_at' | 'owner_id'>): Promise<Rental> => {
+export const addRental = async (rental: Omit<RentalInsert, 'owner_id'>): Promise<Rental> => {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -36,9 +36,9 @@ export const addRental = async (rental: Omit<RentalInsert, 'id' | 'created_at' |
   
   const rentalWithOwner = {
     ...rental,
+    owner_id: user.id,
     start_date: new Date(rental.start_date).toISOString().split('T')[0],
     due_date: new Date(rental.due_date).toISOString().split('T')[0],
-    owner_id: user.id,
   };
 
   const { data, error } = await supabase
