@@ -29,9 +29,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import type { Rental, RentalInsert, RentalUpdate } from "@/lib/types";
-import { suggestRentalAmount } from "@/app/actions";
+import { suggestRentalAmount as suggestRentalAmountFlow, type SuggestRentalAmountInput, type SuggestRentalAmountOutput } from "@/ai/flows/suggest-rental-amount";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-import type { SuggestRentalAmountOutput } from "@/ai/flows/suggest-rental-amount";
 import { useToast } from "@/hooks/use-toast";
 import { NIGERIAN_STATES } from "@/lib/nigerian-states";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
@@ -138,14 +137,14 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
     setIsSuggesting(true);
     setSuggestion(null);
     try {
-      const result = await suggestRentalAmount(suggestionInput);
+      const result = await suggestRentalAmountFlow(suggestionInput);
       setSuggestion(result);
       form.setValue('rent_amount', result.suggestedRentalAmount);
     } catch (error) {
        toast({
         variant: "destructive",
         title: "Suggestion Failed",
-        description: (error as Error).message,
+        description: "Failed to get rental suggestion. Please try again.",
       });
     } finally {
       setIsSuggesting(false);
