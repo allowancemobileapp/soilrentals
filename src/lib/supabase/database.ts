@@ -39,7 +39,7 @@ export const addRental = async (rental: RentalInsert): Promise<Rental> => {
 
   const { data, error } = await supabase
     .from('rentals')
-    .insert([rentalWithOwner])
+    .insert(rentalWithOwner)
     .select()
     .single();
 
