@@ -222,7 +222,7 @@ export default function Dashboard() {
             <h3 className="font-semibold">Names in Database:</h3>
             {names.length > 0 ? (
               <ul className="list-disc pl-5 mt-2">
-                {names.map(name => <li key={name.id}>{name.name}</li>)}
+                {names.filter(Boolean).map(name => <li key={name.id}>{name.name}</li>)}
               </ul>
             ) : (
               <p className="text-muted-foreground mt-2">No names found. Add one to test.</p>
