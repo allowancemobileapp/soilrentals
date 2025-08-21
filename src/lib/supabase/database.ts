@@ -23,10 +23,10 @@ export const getRentals = async (): Promise<Rental[]> => {
     throw new Error('Failed to fetch rentals.');
   }
   
-  return (data as any) || [];
+  return data || [];
 };
 
-export const addRental = async (rental: Omit<RentalInsert, 'owner_id'>): Promise<Rental> => {
+export const addRental = async (rental: Omit<RentalInsert, 'id' | 'created_at' | 'updated_at' | 'owner_id'>): Promise<Rental> => {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -56,7 +56,7 @@ export const addRental = async (rental: Omit<RentalInsert, 'owner_id'>): Promise
     throw new Error('Failed to add rental: No data returned from database.');
   }
   
-  return data as any;
+  return data;
 };
 
 
@@ -80,7 +80,7 @@ export const updateRental = async (id: string, rental: RentalUpdate): Promise<Re
     console.error('Error updating rental:', error);
     throw new Error('Failed to update rental.');
   }
-  return data as any;
+  return data;
 };
 
 export const deleteRental = async (id: string): Promise<void> => {
