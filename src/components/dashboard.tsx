@@ -68,11 +68,7 @@ export default function Dashboard() {
   const safeRentals = (rentals || []).filter(r => r);
 
   const totalRentals = safeRentals.length;
-  const topState = safeRentals.length > 0 && safeRentals.some(r => r.state)
-    ? Object.entries(safeRentals.filter(r => r.state).reduce((acc, r) => ({ ...acc, [r.state!]: (acc[r.state!] || 0) + 1 }), {} as Record<string, number>))
-      .sort((a, b) => b[1] - a[1])[0][0]
-    : "N/A";
-
+  
   const isUpcomingDue = (dueDateStr: string | null) => {
     if (!dueDateStr) return false;
     try {
@@ -231,7 +227,7 @@ export default function Dashboard() {
   
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-2">
         <Card onClick={() => handleQuickFilter("all")} className="cursor-pointer hover:bg-accent">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Rentals</CardTitle>
@@ -239,15 +235,6 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalRentals}</div>
-          </CardContent>
-        </Card>
-        <Card onClick={() => topState !== "N/A" && handleStateFilterClick(topState)} className={topState !== "N/A" ? "cursor-pointer hover:bg-accent" : ""}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Top State</CardTitle>
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{topState}</div>
           </CardContent>
         </Card>
         <Card onClick={() => handleQuickFilter("dues")} className="cursor-pointer hover:bg-accent">
@@ -320,5 +307,4 @@ export default function Dashboard() {
     </>
   );
 }
-
     
