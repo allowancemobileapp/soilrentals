@@ -45,7 +45,7 @@ export default function Dashboard() {
     fetchRentals();
   }, [toast]);
 
-  const safeRentals = (rentals || []).filter(r => r && typeof r === 'object' && r.state && r.due_date);
+  const safeRentals = (rentals || []).filter(r => r && r.state && r.due_date);
 
   const totalRentals = safeRentals.length;
   const topState = safeRentals.length > 0

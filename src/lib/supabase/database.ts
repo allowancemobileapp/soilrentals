@@ -29,47 +29,44 @@ export const getRentals = async (): Promise<Rental[]> => {
 export const addRental = async (rental: Omit<RentalInsert, 'owner_id'>): Promise<Rental> => {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-        throw new AuthError("User not authenticated to add a rental. Please log in again.");
-    }
+
+  if (!user) {
+    throw new AuthError("User not authenticated to add a rental. Please log in again.");
+  }
   
   const rentalWithOwner = {
     ...rental,
-    // Format dates to 'YYYY-MM-DD' for the 'date' type column in Postgres
     start_date: new Date(rental.start_date).toISOString().split('T')[0],
     due_date: new Date(rental.due_date).toISOString().split('T')[0],
     owner_id: user.id,
   };
 
-  try {
-    const { data, error } = await supabase
-      .from('rentals')
-      .insert(rentalWithOwner)
-      .select()
-      .single();
+  const { data, error } = await supabase
+    .from('rentals')
+    .insert(rentalWithOwner)
+    .select()
+    .single();
 
-    if (error) {
-      // This will now throw a detailed error if the insert fails for any reason
-      throw new Error(`Supabase error: ${error.message}`);
-    }
-    if (!data) {
-      throw new Error('Failed to add rental: No data returned from database.');
-    }
-    return data as any;
-  } catch (error) {
-    // This will catch any error during the process and propagate it
-    console.error("Caught error in addRental:", error);
-    throw error;
+  if (error) {
+    console.error('Supabase insert error:', error);
+    throw new Error(`Database error: ${error.message}`);
   }
+
+  if (!data) {
+    throw new Error('Failed to add rental: No data returned from database.');
+  }
+  
+  return data as any;
 };
 
 
 export const updateRental = async (id: string, rental: RentalUpdate): Promise<Rental> => {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-        throw new AuthError("User not authenticated to update a rental. Please log in again.");
-    }
+  
+  if (!user) {
+    throw new AuthError("User not authenticated to update a rental. Please log in again.");
+  }
 
   const { data, error } = await supabase
     .from('rentals')
@@ -89,9 +86,10 @@ export const updateRental = async (id: string, rental: RentalUpdate): Promise<Re
 export const deleteRental = async (id: string): Promise<void> => {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-        throw new AuthError("User not authenticated to delete a rental. Please log in again.");
-    }
+
+  if (!user) {
+    throw new AuthError("User not authenticated to delete a rental. Please log in again.");
+  }
 
   const { error } = await supabase
     .from('rentals')
