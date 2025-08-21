@@ -4,9 +4,6 @@ import { createClient } from './server';
 import type { Rental, RentalInsert, RentalUpdate } from '@/lib/types';
 import { AuthError } from '@supabase/supabase-js';
 
-// This function is no longer needed as we will get the user from the client instance.
-// const ensureAuthenticated = async () => { ... }
-
 export const getRentals = async (): Promise<Rental[]> => {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

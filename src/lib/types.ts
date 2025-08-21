@@ -7,6 +7,7 @@ export interface Rental {
   city?: string | null;
   address?: string | null;
   rent_amount: number;
+  start_date: string; // Should be a string in ISO format
   due_date: string; // Should be a string in ISO format
   frequency: 'monthly' | 'quarterly' | 'yearly' | 'custom';
   status: 'active' | 'terminated';
@@ -29,6 +30,7 @@ export type RentalInsert = Omit<Rental, 'id' | 'created_at' | 'updated_at' | 'ow
   tenant_name: string;
   state: string;
   rent_amount: number;
+  start_date: string;
   due_date: string;
   owner_id: string;
   frequency: 'monthly' | 'quarterly' | 'yearly' | 'custom';

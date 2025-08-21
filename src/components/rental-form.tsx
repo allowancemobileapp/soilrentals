@@ -24,12 +24,11 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Loader2, Sparkles, Wand2 } from "lucide-react";
+import { CalendarIcon, Loader2, Wand2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import type { Rental } from "@/lib/types";
-import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { NIGERIAN_STATES } from "@/lib/nigerian-states";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
@@ -42,6 +41,7 @@ const formSchema = z.object({
   city: z.string().optional(),
   address: z.string().optional(),
   rent_amount: z.coerce.number().min(0, { message: "Rent amount must be a positive number." }),
+  start_date: z.date(),
   due_date: z.date(),
   frequency: z.enum(['monthly', 'quarterly', 'yearly', 'custom']),
   status: z.enum(['active', 'terminated']),
@@ -69,6 +69,7 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: rental ? {
       ...rental,
+      start_date: rental.start_date ? parseISO(rental.start_date) : new Date(),
       due_date: rental.due_date ? parseISO(rental.due_date) : new Date(),
     } : {
       shop_name: "",
@@ -77,6 +78,7 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
       city: "",
       address: "",
       rent_amount: 50000,
+      start_date: new Date(),
       due_date: new Date(),
       frequency: 'monthly',
       status: 'active',
@@ -93,6 +95,7 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
     if (rental) {
       form.reset({
         ...rental,
+        start_date: rental.start_date ? parseISO(rental.start_date) : new Date(),
         due_date: rental.due_date ? parseISO(rental.due_date) : new Date(),
       });
     } else {
@@ -103,6 +106,7 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
         city: "",
         address: "",
         rent_amount: 50000,
+        start_date: new Date(),
         due_date: new Date(),
         frequency: 'monthly',
         status: 'active',
@@ -125,6 +129,7 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
         city: data.city,
         address: data.address,
         rent_amount: data.rent_amount,
+        start_date: data.start_date.toISOString(),
         due_date: data.due_date.toISOString(),
         frequency: data.frequency,
         status: data.status,
@@ -286,7 +291,7 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
             )}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
              <FormField
               control={form.control}
               name="rent_amount"
@@ -296,6 +301,44 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
                   <FormControl>
                     <Input type="number" placeholder="e.g., 250000" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="start_date"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Start Date</FormLabel>
+                   <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}

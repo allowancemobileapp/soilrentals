@@ -139,7 +139,7 @@ export default function Dashboard() {
   };
   
   const exportToCSV = () => {
-    const headers = ["Shop Name", "Tenant", "State", "Rent (NGN)", "Frequency", "Due Date"];
+    const headers = ["Shop Name", "Tenant", "State", "Rent (NGN)", "Frequency", "Start Date", "Due Date"];
     const csvContent = [
       headers.join(","),
       ...filteredRentals.map(r => [
@@ -148,6 +148,7 @@ export default function Dashboard() {
         r.state,
         r.rent_amount,
         r.frequency,
+        r.start_date ? new Date(r.start_date).toLocaleDateString() : 'N/A',
         r.due_date ? new Date(r.due_date).toLocaleDateString() : 'N/A',
       ].join(","))
     ].join("\n");
