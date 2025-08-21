@@ -47,7 +47,6 @@ export default function RentalTable({ rentals, onEdit, onDelete }: RentalTablePr
           <TableRow>
             <TableHead>Shop Name</TableHead>
             <TableHead className="hidden md:table-cell">Tenant</TableHead>
-            <TableHead className="hidden md:table-cell">State</TableHead>
             <TableHead>Rent</TableHead>
             <TableHead>Due Date</TableHead>
             <TableHead>
@@ -64,10 +63,8 @@ export default function RentalTable({ rentals, onEdit, onDelete }: RentalTablePr
               <TableRow key={rental.id}>
                 <TableCell className="font-medium">{rental.shop_name}</TableCell>
                 <TableCell className="hidden md:table-cell">{rental.tenant_name}</TableCell>
-                <TableCell className="hidden md:table-cell">{rental.state}</TableCell>
                 <TableCell>
-                  ₦{rental.rent_amount.toLocaleString()}
-                  <span className="text-xs text-muted-foreground">/{rental.frequency.substring(0,2)}</span>
+                  {rental.rent_amount ? `₦${rental.rent_amount.toLocaleString()}`: 'N/A'}
                 </TableCell>
                 <TableCell>
                   <Badge variant={isPast(dueDate) ? "destructive" : "outline"}>
@@ -118,7 +115,7 @@ export default function RentalTable({ rentals, onEdit, onDelete }: RentalTablePr
             )})
           ) : (
             <TableRow>
-              <TableCell colSpan={6} className="h-24 text-center">
+              <TableCell colSpan={5} className="h-24 text-center">
                 No results found. Start by adding a new rental.
               </TableCell>
             </TableRow>

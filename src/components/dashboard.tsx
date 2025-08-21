@@ -45,11 +45,11 @@ export default function Dashboard() {
     fetchRentals();
   }, [toast]);
 
-  const safeRentals = (rentals || []).filter(r => r && r.state && r.due_date);
+  const safeRentals = (rentals || []).filter(r => r && r.due_date);
 
   const totalRentals = safeRentals.length;
-  const topState = safeRentals.length > 0
-    ? Object.entries(safeRentals.reduce((acc, r) => ({ ...acc, [r.state]: (acc[r.state] || 0) + 1 }), {} as Record<string, number>))
+  const topState = safeRentals.length > 0 && safeRentals.some(r => r.state)
+    ? Object.entries(safeRentals.filter(r => r.state).reduce((acc, r) => ({ ...acc, [r.state!]: (acc[r.state!] || 0) + 1 }), {} as Record<string, number>))
       .sort((a, b) => b[1] - a[1])[0][0]
     : "N/A";
   const upcomingDues = safeRentals.filter(r => {
@@ -66,7 +66,7 @@ export default function Dashboard() {
     return matchesSearch && matchesState;
   });
   
-  const handleAddRental = async (newRentalData: Omit<RentalInsert, 'owner_id'>) => {
+  const handleAddRental = async (newRentalData: Omit<RentalInsert, 'user_id'>) => {
     try {
       const newRental = await addRental(newRentalData);
       setRentals(prev => [newRental, ...prev]);
@@ -139,16 +139,14 @@ export default function Dashboard() {
   };
   
   const exportToCSV = () => {
-    const headers = ["Shop Name", "Tenant", "State", "Rent (NGN)", "Frequency", "Start Date", "Due Date"];
+    const headers = ["Shop Name", "Tenant", "State", "Rent (NGN)", "Due Date"];
     const csvContent = [
       headers.join(","),
       ...filteredRentals.map(r => [
         `"${r.shop_name}"`,
-        `"${r.tenant_name}"`,
-        r.state,
-        r.rent_amount,
-        r.frequency,
-        r.start_date ? new Date(r.start_date).toLocaleDateString() : 'N/A',
+        `"${r.tenant_name || ''}"`,
+        r.state || '',
+        r.rent_amount || '',
         r.due_date ? new Date(r.due_date).toLocaleDateString() : 'N/A',
       ].join(","))
     ].join("\n");
@@ -183,7 +181,6 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalRentals}</div>
-            <p className="text-xs text-muted-foreground">+2 from last month</p>
           </CardContent>
         </Card>
         <Card>
@@ -193,7 +190,6 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{topState}</div>
-            <p className="text-xs text-muted-foreground">Highest number of properties</p>
           </CardContent>
         </Card>
         <Card>
@@ -238,7 +234,7 @@ export default function Dashboard() {
                   Add Rental
                 </Button>
               </SheetTrigger>
-              <SheetContent className="sm:max-w-2xl">
+              <SheetContent className="sm:max-w-lg">
                 <SheetHeader>
                   <SheetTitle>{editingRental ? 'Edit Rental' : 'Add New Rental'}</SheetTitle>
                 </SheetHeader>
