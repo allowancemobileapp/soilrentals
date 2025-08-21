@@ -29,7 +29,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import type { Rental, RentalInsert, RentalUpdate } from "@/lib/types";
-import { suggestRentalAmount as suggestRentalAmountFlow, type SuggestRentalAmountInput, type SuggestRentalAmountOutput } from "@/ai/flows/suggest-rental-amount";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { NIGERIAN_STATES } from "@/lib/nigerian-states";
@@ -58,7 +57,7 @@ interface RentalFormProps {
 
 export default function RentalForm({ rental, onSave }: RentalFormProps) {
   const { toast } = useToast();
-  const [suggestion, setSuggestion] = React.useState<SuggestRentalAmountOutput | null>(null);
+  // const [suggestion, setSuggestion] = React.useState<SuggestRentalAmountOutput | null>(null);
   const [isSuggesting, setIsSuggesting] = React.useState(false);
   
   const form = useForm<RentalFormValues>({
@@ -113,42 +112,11 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
   };
   
   const handleSuggestRent = async () => {
-    const values = form.getValues();
-    const validation = formSchema.pick({ state: true, property_type: true, bedrooms: true, bathrooms: true, square_footage: true, description: true, rental_type: true }).safeParse(values);
-    
-    if (!validation.success) {
-      toast({
-        variant: "destructive",
-        title: "Missing Information",
-        description: "Please fill in all property details before suggesting a rent.",
-      });
-      return;
-    }
-    
-    const { property_type, square_footage, rental_type, ...rest} = validation.data;
-
-    const suggestionInput: SuggestRentalAmountInput = {
-        ...rest,
-        propertyType: property_type,
-        squareFootage: square_footage,
-        rentalType: rental_type,
-    };
-
-    setIsSuggesting(true);
-    setSuggestion(null);
-    try {
-      const result = await suggestRentalAmountFlow(suggestionInput);
-      setSuggestion(result);
-      form.setValue('rent_amount', result.suggestedRentalAmount);
-    } catch (error) {
-       toast({
-        variant: "destructive",
-        title: "Suggestion Failed",
-        description: "Failed to get rental suggestion. Please try again.",
-      });
-    } finally {
-      setIsSuggesting(false);
-    }
+    toast({
+      variant: "destructive",
+      title: "Feature Unavailable",
+      description: "The AI suggestion feature is temporarily disabled.",
+    });
   }
 
   return (
@@ -289,12 +257,12 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
         <div className="space-y-4 rounded-lg border p-4">
            <div className="flex items-center justify-between">
             <h3 className="text-lg font-medium">Rental Details</h3>
-            <Button type="button" variant="outline" size="sm" onClick={handleSuggestRent} disabled={isSuggesting}>
+            <Button type="button" variant="outline" size="sm" onClick={handleSuggestRent} disabled={true}>
               {isSuggesting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-              Suggest Rent
+              Suggest Rent (Disabled)
             </Button>
           </div>
-          {suggestion && (
+          {/*suggestion && (
             <Alert>
               <Sparkles className="h-4 w-4" />
               <AlertTitle>AI Suggestion</AlertTitle>
@@ -302,7 +270,7 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
                 {suggestion.reasoning} We've updated the rent amount field with our suggestion.
               </AlertDescription>
             </Alert>
-          )}
+          )*/}
           
           <FormField
             control={form.control}
