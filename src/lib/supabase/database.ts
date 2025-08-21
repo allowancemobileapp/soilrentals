@@ -3,22 +3,21 @@
 import { createClient } from './server';
 import type { Rental, RentalInsert, RentalUpdate } from '@/lib/types';
 
-const getOwnerId = async (): Promise<string> => {
+const ensureAuthenticated = async () => {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
         throw new Error("User not authenticated");
     }
-    return user.id;
+    return user;
 }
 
 export const getRentals = async (): Promise<Rental[]> => {
+  await ensureAuthenticated();
   const supabase = await createClient();
-  const owner_id = await getOwnerId();
   const { data, error } = await supabase
     .from('rentals')
     .select('*')
-    .eq('owner_id', owner_id)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -30,13 +29,11 @@ export const getRentals = async (): Promise<Rental[]> => {
 };
 
 export const addRental = async (rental: RentalInsert): Promise<Rental> => {
-   const supabase = await createClient();
-   const owner_id = await getOwnerId();
-   const rentalWithOwner = { ...rental, owner_id };
-
+  await ensureAuthenticated();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('rentals')
-    .insert([rentalWithOwner])
+    .insert([rental])
     .select()
     .single();
 
@@ -49,6 +46,7 @@ export const addRental = async (rental: RentalInsert): Promise<Rental> => {
 
 
 export const updateRental = async (id: string, rental: RentalUpdate): Promise<Rental> => {
+  await ensureAuthenticated();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('rentals')
@@ -65,6 +63,7 @@ export const updateRental = async (id: string, rental: RentalUpdate): Promise<Re
 };
 
 export const deleteRental = async (id: string): Promise<void> => {
+  await ensureAuthenticated();
   const supabase = await createClient();
   const { error } = await supabase
     .from('rentals')
