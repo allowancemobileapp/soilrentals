@@ -45,7 +45,7 @@ export default function Dashboard() {
     fetchRentals();
   }, [toast]);
 
-  const safeRentals = (rentals || []).filter(r => r && typeof r === 'object' && r.state);
+  const safeRentals = (rentals || []).filter(r => r && typeof r === 'object' && r.state && r.due_date);
 
   const totalRentals = safeRentals.length;
   const topState = safeRentals.length > 0
@@ -78,8 +78,8 @@ export default function Dashboard() {
     } catch (error) {
        toast({
         variant: "destructive",
-        title: "Error adding rental",
-        description: (error as Error).message,
+        title: "Error Adding Rental",
+        description: (error as Error).message || "An unknown error occurred.",
       });
     }
   };
@@ -244,7 +244,7 @@ export default function Dashboard() {
                 </SheetHeader>
                 <RentalForm 
                   rental={editingRental}
-                  onSave={editingRental ? (data) => handleUpdateRental(data) : handleAddRental}
+                  onSave={editingRental ? handleUpdateRental : handleAddRental}
                 />
               </SheetContent>
             </Sheet>
