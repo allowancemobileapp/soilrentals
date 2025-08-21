@@ -2,10 +2,10 @@
 "use client";
 
 import * as React from "react";
-import { Calendar, Home, Loader2, MapPin, PlusCircle, Search, FileDown } from "lucide-react";
+import { Calendar, Home, Loader2, MapPin, PlusCircle, Search, FileDown, FilterX } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Rental, Name } from "@/lib/types";
-import { add, parseISO } from "date-fns";
+import type { Rental } from "@/lib/types";
+import { add, parseISO, isPast } from "date-fns";
 import RentalTable from "./rental-table";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
 import RentalForm from "./rental-form";
 import { NIGERIAN_STATES } from "@/lib/nigerian-states";
-import { getRentalsForUser, addRental, updateRental, deleteRental, addNameToUser, getNamesForUser } from "@/lib/supabase/database";
+import { getRentalsForUser, addRental, updateRental, deleteRental } from "@/lib/supabase/database";
 import { useToast } from "@/hooks/use-toast";
 import type { RentalInsert, RentalUpdate } from '@/lib/types';
 import { useAuth } from "@/lib/firebase/auth-context";
@@ -24,10 +24,9 @@ export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [rentals, setRentals] = React.useState<Rental[]>([]);
-  const [names, setNames] = React.useState<Name[]>([]);
-  const [newName, setNewName] = React.useState("");
   const [search, setSearch] = React.useState("");
   const [stateFilter, setStateFilter] = React.useState("all");
+  const [quickFilter, setQuickFilter] = React.useState<"all" | "dues">("all");
   const [isLoading, setIsLoading] = React.useState(true);
   const [editingRental, setEditingRental] = React.useState<Rental | null>(null);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
@@ -43,12 +42,8 @@ export default function Dashboard() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const [fetchedRentals, fetchedNames] = await Promise.all([
-          getRentalsForUser(user.uid),
-          getNamesForUser(user.uid)
-        ]);
+        const fetchedRentals = await getRentalsForUser(user.uid)
         setRentals(fetchedRentals || []);
-        setNames(fetchedNames || []);
       } catch (error) {
         toast({
           variant: "destructive",
@@ -62,26 +57,6 @@ export default function Dashboard() {
     fetchData();
   }, [user, authLoading, router, toast]);
 
-  const handleAddName = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newName.trim() || !user) return;
-    try {
-      const addedName = await addNameToUser(user.uid, newName.trim());
-      setNames(prev => [addedName, ...prev]);
-      setNewName("");
-      toast({
-        title: "Success",
-        description: "Name added successfully.",
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error Adding Name",
-        description: (error as Error).message || "An unknown error occurred.",
-      });
-    }
-  };
-
   const safeRentals = (rentals || []).filter(r => r);
 
   const totalRentals = safeRentals.length;
@@ -90,22 +65,29 @@ export default function Dashboard() {
       .sort((a, b) => b[1] - a[1])[0][0]
     : "N/A";
 
-  const upcomingDues = safeRentals.filter(r => {
-      if (!r.due_date) return false;
-      try {
-        const dueDate = parseISO(r.due_date);
-        return dueDate > new Date() && dueDate <= add(new Date(), { days: 30 });
-      } catch (e) {
-        return false;
-      }
-    }).length;
+  const isUpcomingDue = (dueDateStr: string | null) => {
+    if (!dueDateStr) return false;
+    try {
+      const dueDate = parseISO(dueDateStr);
+      return dueDate > new Date() && dueDate <= add(new Date(), { days: 30 });
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const upcomingDuesCount = safeRentals.filter(r => isUpcomingDue(r.due_date)).length;
 
   const filteredRentals = safeRentals.filter(rental => {
     const searchLower = search.toLowerCase();
     const matchesSearch = (rental.shop_name && rental.shop_name.toLowerCase().includes(searchLower)) ||
       (rental.tenant_name && rental.tenant_name.toLowerCase().includes(searchLower));
+    
     const matchesState = stateFilter === 'all' || rental.state === stateFilter;
-    return matchesSearch && matchesState;
+    
+    const matchesQuickFilter = quickFilter === 'all' || 
+      (quickFilter === 'dues' && isUpcomingDue(rental.due_date));
+
+    return matchesSearch && matchesState && matchesQuickFilter;
   });
   
   const handleAddRental = async (newRentalData: Omit<RentalInsert, 'user_id'>) => {
@@ -181,6 +163,16 @@ export default function Dashboard() {
       setEditingRental(null);
     }
   };
+
+  const handleQuickFilter = (filter: "all" | "dues") => {
+    setStateFilter("all");
+    setQuickFilter(filter);
+  };
+
+  const handleStateFilterClick = (state: string) => {
+    setQuickFilter("all");
+    setStateFilter(state);
+  };
   
   const exportToCSV = () => {
     const headers = ["Shop Name", "Tenant", "State", "Rent (NGN)", "Due Date"];
@@ -217,34 +209,8 @@ export default function Dashboard() {
   
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Database Insertion Test</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleAddName} className="flex items-center gap-2">
-            <Input 
-              placeholder="Enter a name to save" 
-              value={newName}
-              onChange={e => setNewName(e.target.value)}
-            />
-            <Button type="submit">Save Name</Button>
-          </form>
-          <div className="mt-4">
-            <h3 className="font-semibold">Names in Database:</h3>
-            {names.length > 0 ? (
-              <ul className="list-disc pl-5 mt-2">
-                {names.filter(Boolean).map(name => <li key={name.id}>{name.name}</li>)}
-              </ul>
-            ) : (
-              <p className="text-muted-foreground mt-2">No names found. Add one to test.</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3 mt-8">
-        <Card>
+      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+        <Card onClick={() => handleQuickFilter("all")} className="cursor-pointer hover:bg-accent">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Rentals</CardTitle>
             <Home className="h-4 w-4 text-muted-foreground" />
@@ -253,7 +219,7 @@ export default function Dashboard() {
             <div className="text-2xl font-bold">{totalRentals}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card onClick={() => topState !== "N/A" && handleStateFilterClick(topState)} className={topState !== "N/A" ? "cursor-pointer hover:bg-accent" : ""}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Top State</CardTitle>
             <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -262,13 +228,13 @@ export default function Dashboard() {
             <div className="text-2xl font-bold">{topState}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card onClick={() => handleQuickFilter("dues")} className="cursor-pointer hover:bg-accent">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Upcoming Dues</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{upcomingDues}</div>
+            <div className="text-2xl font-bold">+{upcomingDuesCount}</div>
             <p className="text-xs text-muted-foreground">In the next 30 days</p>
           </CardContent>
         </Card>
@@ -277,43 +243,52 @@ export default function Dashboard() {
       <Card>
         <CardHeader>
           <CardTitle>Rental Management</CardTitle>
-          <div className="flex items-center gap-2 pt-4">
-            <div className="relative flex-1">
+          <div className="flex flex-col sm:flex-row items-center gap-2 pt-4">
+            <div className="relative flex-1 w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search rentals..." className="pl-10" value={search} onChange={e => setSearch(e.target.value)} />
+              <Input placeholder="Search rentals..." className="pl-10 w-full" value={search} onChange={e => setSearch(e.target.value)} />
             </div>
-            <Select value={stateFilter} onValueChange={setStateFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by state" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All States</SelectItem>
-                {NIGERIAN_STATES.map(state => (
-                  <SelectItem key={state} value={state}>{state}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button onClick={exportToCSV} variant="outline" className="gap-2">
-              <FileDown className="h-4 w-4" />
-              Export
-            </Button>
-            <Sheet open={isSheetOpen} onOpenChange={handleSheetOpenChange}>
-              <SheetTrigger asChild>
-                <Button onClick={handleAddNewClick} className="gap-2">
-                  <PlusCircle className="h-4 w-4" />
-                  Add Rental
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Select value={stateFilter} onValueChange={(value) => { setStateFilter(value); setQuickFilter("all"); }}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Filter by state" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All States</SelectItem>
+                  {NIGERIAN_STATES.map(state => (
+                    <SelectItem key={state} value={state}>{state}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {(stateFilter !== 'all' || quickFilter !== 'all') && (
+                <Button variant="ghost" size="icon" onClick={() => { setStateFilter('all'); setQuickFilter('all'); }}>
+                  <FilterX className="h-4 w-4" />
                 </Button>
-              </SheetTrigger>
-              <SheetContent className="sm:max-w-lg">
-                <SheetHeader>
-                  <SheetTitle>{editingRental ? 'Edit Rental' : 'Add New Rental'}</SheetTitle>
-                </SheetHeader>
-                <RentalForm 
-                  rental={editingRental}
-                  onSave={editingRental ? handleUpdateRental : handleAddRental}
-                />
-              </SheetContent>
-            </Sheet>
+              )}
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Button onClick={exportToCSV} variant="outline" className="w-full sm:w-auto">
+                <FileDown className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+              <Sheet open={isSheetOpen} onOpenChange={handleSheetOpenChange}>
+                <SheetTrigger asChild>
+                  <Button onClick={handleAddNewClick} className="w-full sm:w-auto">
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Add Rental
+                  </Button>
+                </SheetTrigger>
+                <SheetContent className="sm:max-w-lg">
+                  <SheetHeader>
+                    <SheetTitle>{editingRental ? 'Edit Rental' : 'Add New Rental'}</SheetTitle>
+                  </SheetHeader>
+                  <RentalForm 
+                    rental={editingRental}
+                    onSave={editingRental ? handleUpdateRental : handleAddRental}
+                  />
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
