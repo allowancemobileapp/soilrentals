@@ -25,16 +25,16 @@ export const getRentals = async (): Promise<Rental[]> => {
     throw new Error('Failed to fetch rentals.');
   }
   
-  return data || [];
+  return (data as any) || [];
 };
 
-export const addRental = async (rental: RentalInsert): Promise<Rental> => {
+export const addRental = async (rental: Omit<RentalInsert, 'owner_id'>): Promise<Rental> => {
   const user = await ensureAuthenticated();
   const supabase = await createClient();
   
   const rentalWithOwner = {
     ...rental,
-    user_id: user.id,
+    owner_id: user.id,
   };
 
   const { data, error } = await supabase
@@ -45,9 +45,9 @@ export const addRental = async (rental: RentalInsert): Promise<Rental> => {
 
   if (error) {
     console.error('Error adding rental:', error);
-    throw new Error('Failed to add rental.');
+    throw new Error(`Failed to add rental: ${error.message}`);
   }
-  return data;
+  return data as any;
 };
 
 
@@ -65,7 +65,7 @@ export const updateRental = async (id: string, rental: RentalUpdate): Promise<Re
     console.error('Error updating rental:', error);
     throw new Error('Failed to update rental.');
   }
-  return data;
+  return data as any;
 };
 
 export const deleteRental = async (id: string): Promise<void> => {

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Calendar, Home, Loader2, MapPin, TrendingUp, Download, PlusCircle, Search, FileDown } from "lucide-react";
+import { Calendar, Home, Loader2, MapPin, PlusCircle, Search, FileDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Rental } from "@/lib/types";
 import { add, parseISO } from "date-fns";
@@ -45,7 +45,7 @@ export default function Dashboard() {
     fetchRentals();
   }, [toast]);
 
-  const safeRentals = (rentals || []).filter(r => r && typeof r === 'object');
+  const safeRentals = (rentals || []).filter(r => r && typeof r === 'object' && r.state);
 
   const totalRentals = safeRentals.length;
   const topState = safeRentals.length > 0
@@ -53,19 +53,20 @@ export default function Dashboard() {
       .sort((a, b) => b[1] - a[1])[0][0]
     : "N/A";
   const upcomingDues = safeRentals.filter(r => {
+      if (!r.due_date) return false;
       const dueDate = parseISO(r.due_date);
       return dueDate > new Date() && dueDate <= add(new Date(), { days: 30 });
     }).length;
 
   const filteredRentals = safeRentals.filter(rental => {
     const searchLower = search.toLowerCase();
-    const matchesSearch = rental.shop_name.toLowerCase().includes(searchLower) ||
-      rental.tenant_name.toLowerCase().includes(searchLower);
+    const matchesSearch = (rental.shop_name && rental.shop_name.toLowerCase().includes(searchLower)) ||
+      (rental.tenant_name && rental.tenant_name.toLowerCase().includes(searchLower));
     const matchesState = stateFilter === 'all' || rental.state === stateFilter;
     return matchesSearch && matchesState;
   });
   
-  const handleAddRental = async (newRentalData: RentalInsert) => {
+  const handleAddRental = async (newRentalData: Omit<RentalInsert, 'owner_id'>) => {
     try {
       const newRental = await addRental(newRentalData);
       setRentals(prev => [newRental, ...prev]);
@@ -77,7 +78,7 @@ export default function Dashboard() {
     } catch (error) {
        toast({
         variant: "destructive",
-        title: "Error",
+        title: "Error adding rental",
         description: (error as Error).message,
       });
     }
@@ -97,7 +98,7 @@ export default function Dashboard() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "Error updating rental",
         description: (error as Error).message,
       });
     }
@@ -114,7 +115,7 @@ export default function Dashboard() {
     } catch (error) {
        toast({
         variant: "destructive",
-        title: "Error",
+        title: "Error deleting rental",
         description: (error as Error).message,
       });
     }
@@ -138,7 +139,7 @@ export default function Dashboard() {
   };
   
   const exportToCSV = () => {
-    const headers = ["Shop Name", "Tenant", "State", "Rent (NGN)", "Rental Type", "Due Date"];
+    const headers = ["Shop Name", "Tenant", "State", "Rent (NGN)", "Frequency", "Due Date"];
     const csvContent = [
       headers.join(","),
       ...filteredRentals.map(r => [
@@ -146,8 +147,8 @@ export default function Dashboard() {
         `"${r.tenant_name}"`,
         r.state,
         r.rent_amount,
-        r.rental_type,
-        new Date(r.due_date).toLocaleDateString(),
+        r.frequency,
+        r.due_date ? new Date(r.due_date).toLocaleDateString() : 'N/A',
       ].join(","))
     ].join("\n");
 
@@ -242,7 +243,7 @@ export default function Dashboard() {
                 </SheetHeader>
                 <RentalForm 
                   rental={editingRental}
-                  onSave={editingRental ? (data) => handleUpdateRental(data) : (data) => handleAddRental(data as RentalInsert)}
+                  onSave={editingRental ? (data) => handleUpdateRental(data) : handleAddRental}
                 />
               </SheetContent>
             </Sheet>

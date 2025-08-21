@@ -58,6 +58,7 @@ export default function RentalTable({ rentals, onEdit, onDelete }: RentalTablePr
         <TableBody>
           {rentals.length > 0 ? (
             rentals.map((rental) => {
+              if (!rental || !rental.due_date) return null;
               const dueDate = parseISO(rental.due_date);
               return (
               <TableRow key={rental.id}>
@@ -66,7 +67,7 @@ export default function RentalTable({ rentals, onEdit, onDelete }: RentalTablePr
                 <TableCell className="hidden md:table-cell">{rental.state}</TableCell>
                 <TableCell>
                   ₦{rental.rent_amount.toLocaleString()}
-                  <span className="text-xs text-muted-foreground">/{rental.rental_type === 'monthly' ? 'mo' : 'yr'}</span>
+                  <span className="text-xs text-muted-foreground">/{rental.frequency.substring(0,2)}</span>
                 </TableCell>
                 <TableCell>
                   <Badge variant={isPast(dueDate) ? "destructive" : "outline"}>
