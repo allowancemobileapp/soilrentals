@@ -1,5 +1,6 @@
 export interface Rental {
   id: string;
+  user_id: string;
   shop_name: string;
   tenant_name: string;
   state: string;
@@ -17,5 +18,5 @@ export interface Rental {
 export type PropertyType = Rental['property_type'];
 export type RentalType = Rental['rental_type'];
 
-export type RentalInsert = Omit<Rental, 'id' | 'created_at'>;
-export type RentalUpdate = Partial<RentalInsert>;
+export type RentalInsert = Omit<Rental, 'id' | 'created_at' | 'user_id'>;
+export type RentalUpdate = Partial<Omit<Rental, 'id' | 'created_at' | 'user_id'>>;

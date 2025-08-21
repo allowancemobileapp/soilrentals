@@ -29,11 +29,17 @@ export const getRentals = async (): Promise<Rental[]> => {
 };
 
 export const addRental = async (rental: RentalInsert): Promise<Rental> => {
-  await ensureAuthenticated();
+  const user = await ensureAuthenticated();
   const supabase = await createClient();
+  
+  const rentalWithOwner = {
+    ...rental,
+    user_id: user.id,
+  };
+
   const { data, error } = await supabase
     .from('rentals')
-    .insert([rental])
+    .insert([rentalWithOwner])
     .select()
     .single();
 
