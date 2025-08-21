@@ -4,18 +4,16 @@ import { createClient } from './server';
 import type { Rental, RentalInsert, RentalUpdate } from '@/lib/types';
 import { AuthError } from '@supabase/supabase-js';
 
-const ensureAuthenticated = async () => {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-        throw new AuthError("User not authenticated");
-    }
-    return user;
-}
+// This function is no longer needed as we will get the user from the client instance.
+// const ensureAuthenticated = async () => { ... }
 
 export const getRentals = async (): Promise<Rental[]> => {
-  const user = await ensureAuthenticated();
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new AuthError("User not authenticated for getRentals");
+  }
+
   const { data, error } = await supabase
     .from('rentals')
     .select('*')
@@ -31,8 +29,11 @@ export const getRentals = async (): Promise<Rental[]> => {
 };
 
 export const addRental = async (rental: Omit<RentalInsert, 'owner_id'>): Promise<Rental> => {
-  const user = await ensureAuthenticated();
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        throw new AuthError("User not authenticated to add a rental");
+    }
   
   const rentalWithOwner = {
     ...rental,
@@ -57,8 +58,12 @@ export const addRental = async (rental: Omit<RentalInsert, 'owner_id'>): Promise
 
 
 export const updateRental = async (id: string, rental: RentalUpdate): Promise<Rental> => {
-  const user = await ensureAuthenticated();
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        throw new AuthError("User not authenticated to update a rental");
+    }
+
   const { data, error } = await supabase
     .from('rentals')
     .update(rental)
@@ -75,8 +80,12 @@ export const updateRental = async (id: string, rental: RentalUpdate): Promise<Re
 };
 
 export const deleteRental = async (id: string): Promise<void> => {
-  const user = await ensureAuthenticated();
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        throw new AuthError("User not authenticated to delete a rental");
+    }
+
   const { error } = await supabase
     .from('rentals')
     .delete()
