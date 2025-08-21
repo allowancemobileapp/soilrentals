@@ -5,7 +5,7 @@ import * as React from "react";
 import { Calendar, Home, Loader2, MapPin, PlusCircle, Search, FileDown, FilterX } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Rental } from "@/lib/types";
-import { add, parseISO, isPast } from "date-fns";
+import { add, parseISO, isPast, compareAsc } from "date-fns";
 import RentalTable from "./rental-table";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -43,7 +43,15 @@ export default function Dashboard() {
       try {
         setIsLoading(true);
         const fetchedRentals = await getRentalsForUser(user.uid)
-        setRentals(fetchedRentals || []);
+        
+        // Sort rentals by due date (soonest first)
+        const sortedRentals = (fetchedRentals || []).sort((a, b) => {
+          if (!a.due_date) return 1; // a is null, goes to end
+          if (!b.due_date) return -1; // b is null, goes to end
+          return compareAsc(parseISO(a.due_date), parseISO(b.due_date));
+        });
+
+        setRentals(sortedRentals);
       } catch (error) {
         toast({
           variant: "destructive",
@@ -94,7 +102,14 @@ export default function Dashboard() {
     if (!user) return;
     try {
       const newRental = await addRental(user.uid, newRentalData);
-      setRentals(prev => [newRental, ...prev]);
+      setRentals(prev => {
+        const updatedRentals = [newRental, ...prev];
+        return updatedRentals.sort((a, b) => {
+            if (!a.due_date) return 1;
+            if (!b.due_date) return -1;
+            return compareAsc(parseISO(a.due_date), parseISO(b.due_date));
+        });
+      });
       setIsSheetOpen(false);
        toast({
         title: "Success",
@@ -113,7 +128,14 @@ export default function Dashboard() {
     if (!editingRental || !user) return;
     try {
       const updatedRental = await updateRental(editingRental.id, updatedRentalData);
-      setRentals(prev => prev.map(r => r.id === updatedRental.id ? updatedRental : r));
+      setRentals(prev => {
+        const updatedRentals = prev.map(r => r.id === updatedRental.id ? updatedRental : r);
+        return updatedRentals.sort((a, b) => {
+            if (!a.due_date) return 1;
+            if (!b.due_date) return -1;
+            return compareAsc(parseISO(a.due_date), parseISO(b.due_date));
+        });
+      });
       setEditingRental(null);
       setIsSheetOpen(false);
        toast({
@@ -298,3 +320,5 @@ export default function Dashboard() {
     </>
   );
 }
+
+    

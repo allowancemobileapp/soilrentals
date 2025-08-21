@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -31,7 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { format, isPast, parseISO } from 'date-fns';
+import { format, isPast, parseISO, isBefore, addMonths } from 'date-fns';
 
 interface RentalTableProps {
   rentals: Rental[];
@@ -59,6 +60,16 @@ export default function RentalTable({ rentals, onEdit, onDelete }: RentalTablePr
             rentals.map((rental) => {
               if (!rental) return null;
               const dueDate = rental.due_date ? parseISO(rental.due_date) : null;
+              
+              let badgeVariant: "destructive" | "outline" = "outline";
+              if (dueDate) {
+                const now = new Date();
+                const oneMonthFromNow = addMonths(now, 1);
+                if (isPast(dueDate) || (isBefore(dueDate, oneMonthFromNow) && !isPast(dueDate))) {
+                   badgeVariant = "destructive";
+                }
+              }
+
               return (
               <TableRow key={rental.id}>
                 <TableCell className="font-medium">{rental.shop_name}</TableCell>
@@ -68,7 +79,7 @@ export default function RentalTable({ rentals, onEdit, onDelete }: RentalTablePr
                 </TableCell>
                 <TableCell>
                   {dueDate ? (
-                    <Badge variant={isPast(dueDate) ? "destructive" : "outline"}>
+                    <Badge variant={badgeVariant}>
                       {format(dueDate, "MMM dd, yyyy")}
                     </Badge>
                   ) : (
@@ -129,3 +140,5 @@ export default function RentalTable({ rentals, onEdit, onDelete }: RentalTablePr
     </div>
   );
 }
+
+    
