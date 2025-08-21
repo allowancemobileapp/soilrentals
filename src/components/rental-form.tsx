@@ -125,13 +125,13 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
       return;
     }
     
-    const { property_type: propertyType, square_footage: squareFootage, rental_type: rentalType, ...rest} = validation.data;
+    const { property_type, square_footage, rental_type, ...rest} = validation.data;
 
-    const suggestionInput = {
+    const suggestionInput: SuggestRentalAmountInput = {
         ...rest,
-        propertyType,
-        squareFootage,
-        rentalType,
+        propertyType: property_type,
+        squareFootage: square_footage,
+        rentalType: rental_type,
     };
 
     setIsSuggesting(true);
