@@ -8,14 +8,11 @@ import { AuthError } from '@supabase/supabase-js';
 // --- NAMES TEST FUNCTIONS ---
 
 export const getNames = async (): Promise<Name[]> => {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
-
+  const supabase = createClient();
+  
   const { data, error } = await supabase
     .from('names')
     .select('*')
-    .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -27,9 +24,9 @@ export const getNames = async (): Promise<Name[]> => {
 };
 
 export const addName = async (name: string): Promise<Name> => {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const supabase = createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     throw new AuthError("User not authenticated. Please log in again.");
   }
@@ -39,15 +36,12 @@ export const addName = async (name: string): Promise<Name> => {
     user_id: user.id,
   };
 
-  // Perform the insert and select in one go.
   const { data, error } = await supabase
     .from('names')
     .insert(nameWithUser)
     .select()
     .single();
 
-  // This is the critical error check. If the database returns an error,
-  // we throw it, which will be caught by the calling component.
   if (error) {
     console.error('Supabase insert error (addName):', error);
     throw new Error(`Database error: ${error.message}`);
@@ -64,14 +58,11 @@ export const addName = async (name: string): Promise<Name> => {
 // --- RENTAL FUNCTIONS ---
 
 export const getRentals = async (): Promise<Rental[]> => {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('rentals')
     .select('*')
-    .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -83,7 +74,7 @@ export const getRentals = async (): Promise<Rental[]> => {
 };
 
 export const addRental = async (rental: RentalInsert): Promise<Rental> => {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
@@ -116,18 +107,12 @@ export const addRental = async (rental: RentalInsert): Promise<Rental> => {
 
 
 export const updateRental = async (id: string, rental: RentalUpdate): Promise<Rental> => {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const supabase = createClient();
   
-  if (!user) {
-    throw new AuthError("User not authenticated to update a rental. Please log in again.");
-  }
-
   const { data, error } = await supabase
     .from('rentals')
     .update(rental)
     .eq('id', id)
-    .eq('user_id', user.id)
     .select()
     .single();
 
@@ -139,18 +124,12 @@ export const updateRental = async (id: string, rental: RentalUpdate): Promise<Re
 };
 
 export const deleteRental = async (id: string): Promise<void> => {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new AuthError("User not authenticated to delete a rental. Please log in again.");
-  }
+  const supabase = createClient();
 
   const { error } = await supabase
     .from('rentals')
     .delete()
-    .eq('id', id)
-    .eq('user_id', user.id);
+    .eq('id', id);
 
   if (error) {
     console.error('Error deleting rental:', error);
