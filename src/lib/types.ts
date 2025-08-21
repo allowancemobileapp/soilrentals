@@ -10,7 +10,8 @@ export interface Rental {
   created_at?: string;
 }
 
-export type RentalInsert = Omit<Rental, 'id' | 'created_at' | 'user_id'>;
+// For inserting, we expect user_id to be provided.
+export type RentalInsert = Omit<Rental, 'id' | 'created_at'>;
 export type RentalUpdate = Partial<Omit<Rental, 'id' | 'created_at' | 'user_id'>>;
 
 export interface Name {

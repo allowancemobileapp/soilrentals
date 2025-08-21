@@ -1,18 +1,15 @@
+"use server";
 
-'use server';
-
-import { createClient } from './server';
+import { supabase } from './client';
 import type { Rental, RentalInsert, RentalUpdate, Name } from '@/lib/types';
-import { AuthError } from '@supabase/supabase-js';
 
 // --- NAMES TEST FUNCTIONS ---
 
-export const getNames = async (): Promise<Name[]> => {
-  const supabase = createClient();
-  
+export const getNamesForUser = async (userId: string): Promise<Name[]> => {
   const { data, error } = await supabase
     .from('names')
     .select('*')
+    .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -23,17 +20,10 @@ export const getNames = async (): Promise<Name[]> => {
   return data || [];
 };
 
-export const addName = async (name: string): Promise<Name> => {
-  const supabase = createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    throw new AuthError("User not authenticated. Please log in again.");
-  }
-  
+export const addNameToUser = async (userId: string, name: string): Promise<Name> => {
   const nameWithUser = {
     name,
-    user_id: user.id,
+    user_id: userId,
   };
 
   const { data, error } = await supabase
@@ -57,12 +47,11 @@ export const addName = async (name: string): Promise<Name> => {
 
 // --- RENTAL FUNCTIONS ---
 
-export const getRentals = async (): Promise<Rental[]> => {
-  const supabase = createClient();
-
+export const getRentalsForUser = async (userId: string): Promise<Rental[]> => {
   const { data, error } = await supabase
     .from('rentals')
     .select('*')
+    .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -73,17 +62,10 @@ export const getRentals = async (): Promise<Rental[]> => {
   return data || [];
 };
 
-export const addRental = async (rental: RentalInsert): Promise<Rental> => {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new AuthError("User not authenticated. Please log in again.");
-  }
-  
+export const addRental = async (userId: string, rental: Omit<RentalInsert, 'user_id'>): Promise<Rental> => {
   const rentalWithUser = {
     ...rental,
-    user_id: user.id,
+    user_id: userId,
     due_date: rental.due_date || null,
   };
 
@@ -107,8 +89,6 @@ export const addRental = async (rental: RentalInsert): Promise<Rental> => {
 
 
 export const updateRental = async (id: string, rental: RentalUpdate): Promise<Rental> => {
-  const supabase = createClient();
-  
   const { data, error } = await supabase
     .from('rentals')
     .update(rental)
@@ -124,8 +104,6 @@ export const updateRental = async (id: string, rental: RentalUpdate): Promise<Re
 };
 
 export const deleteRental = async (id: string): Promise<void> => {
-  const supabase = createClient();
-
   const { error } = await supabase
     .from('rentals')
     .delete()

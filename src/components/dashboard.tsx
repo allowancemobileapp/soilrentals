@@ -13,12 +13,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
 import RentalForm from "./rental-form";
 import { NIGERIAN_STATES } from "@/lib/nigerian-states";
-import { getRentals, addRental, updateRental, deleteRental, addName, getNames } from "@/lib/supabase/database";
+import { getRentalsForUser, addRental, updateRental, deleteRental, addNameToUser, getNamesForUser } from "@/lib/supabase/database";
 import { useToast } from "@/hooks/use-toast";
 import type { RentalInsert, RentalUpdate } from '@/lib/types';
+import { useAuth } from "@/lib/firebase/auth-context";
+import { useRouter } from "next/navigation";
 
 
 export default function Dashboard() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [rentals, setRentals] = React.useState<Rental[]>([]);
   const [names, setNames] = React.useState<Name[]>([]);
   const [newName, setNewName] = React.useState("");
@@ -30,12 +34,18 @@ export default function Dashboard() {
   const { toast } = useToast();
 
   React.useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
     const fetchData = async () => {
       try {
         setIsLoading(true);
         const [fetchedRentals, fetchedNames] = await Promise.all([
-          getRentals(),
-          getNames()
+          getRentalsForUser(user.uid),
+          getNamesForUser(user.uid)
         ]);
         setRentals(fetchedRentals || []);
         setNames(fetchedNames || []);
@@ -43,20 +53,20 @@ export default function Dashboard() {
         toast({
           variant: "destructive",
           title: "Error fetching data",
-          description: "Could not load data from the database.",
+          description: (error as Error).message || "Could not load data from the database.",
         });
       } finally {
         setIsLoading(false);
       }
     };
     fetchData();
-  }, [toast]);
+  }, [user, authLoading, router, toast]);
 
   const handleAddName = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newName.trim()) return;
+    if (!newName.trim() || !user) return;
     try {
-      const addedName = await addName(newName.trim());
+      const addedName = await addNameToUser(user.uid, newName.trim());
       setNames(prev => [addedName, ...prev]);
       setNewName("");
       toast({
@@ -98,9 +108,10 @@ export default function Dashboard() {
     return matchesSearch && matchesState;
   });
   
-  const handleAddRental = async (newRentalData: RentalInsert) => {
+  const handleAddRental = async (newRentalData: Omit<RentalInsert, 'user_id'>) => {
+    if (!user) return;
     try {
-      const newRental = await addRental(newRentalData);
+      const newRental = await addRental(user.uid, newRentalData);
       setRentals(prev => [newRental, ...prev]);
       setIsSheetOpen(false);
        toast({
@@ -117,7 +128,7 @@ export default function Dashboard() {
   };
 
   const handleUpdateRental = async (updatedRentalData: RentalUpdate) => {
-    if (!editingRental) return;
+    if (!editingRental || !user) return;
     try {
       const updatedRental = await updateRental(editingRental.id, updatedRentalData);
       setRentals(prev => prev.map(r => r.id === updatedRental.id ? updatedRental : r));
@@ -137,6 +148,7 @@ export default function Dashboard() {
   };
   
   const handleDeleteRental = async (id: string) => {
+    if (!user) return;
     try {
       await deleteRental(id);
       setRentals(prev => prev.filter(r => r.id !== id));
@@ -195,9 +207,9 @@ export default function Dashboard() {
   };
 
 
-  if (isLoading) {
+  if (isLoading || authLoading) {
     return (
-      <div className="flex justify-center items-center h-full">
+      <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );

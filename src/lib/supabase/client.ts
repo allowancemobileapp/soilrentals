@@ -1,13 +1,15 @@
+import { createClient } from '@supabase/supabase-js';
 
-'use client'
+// IMPORTANT: This client is used for DATABASE operations ONLY.
+// It does not handle authentication, as that is now managed by Firebase.
+// We use the ANON KEY here, and rely on PostgreSQL Row Level Security (RLS)
+// for data access policies. If you have not configured RLS, your data is public.
 
-import { createBrowserClient } from '@supabase/ssr'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-export function createClient() {
-  // Note: These environment variables are exposed to the browser
-  // and are NOT secrets. They are safe to use here.
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Supabase URL and Anon Key must be provided in .env');
 }
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
