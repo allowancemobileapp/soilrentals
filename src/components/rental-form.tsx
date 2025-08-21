@@ -34,7 +34,7 @@ const formSchema = z.object({
   tenant_name: z.string().optional(),
   state: z.string().optional(),
   rent_amount: z.coerce.number().min(0).optional(),
-  due_date: z.date(),
+  due_date: z.date().optional(),
 });
 
 type RentalFormValues = z.infer<typeof formSchema>;
@@ -49,7 +49,7 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: rental ? {
       ...rental,
-      due_date: rental.due_date ? parseISO(rental.due_date) : new Date(),
+      due_date: rental.due_date ? parseISO(rental.due_date) : undefined,
     } : {
       shop_name: "",
       tenant_name: "",
@@ -63,7 +63,7 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
     if (rental) {
       form.reset({
         ...rental,
-        due_date: rental.due_date ? parseISO(rental.due_date) : new Date(),
+        due_date: rental.due_date ? parseISO(rental.due_date) : undefined,
       });
     } else {
       form.reset({
@@ -79,7 +79,7 @@ export default function RentalForm({ rental, onSave }: RentalFormProps) {
   const onSubmit = (data: RentalFormValues) => {
     const dataForDb = {
         ...data,
-        due_date: data.due_date.toISOString().split('T')[0], // Format as YYYY-MM-DD
+        due_date: data.due_date ? data.due_date.toISOString().split('T')[0] : null,
     };
     onSave(dataForDb);
   };

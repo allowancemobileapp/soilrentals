@@ -57,19 +57,23 @@ export default function RentalTable({ rentals, onEdit, onDelete }: RentalTablePr
         <TableBody>
           {rentals.length > 0 ? (
             rentals.map((rental) => {
-              if (!rental || !rental.due_date) return null;
-              const dueDate = parseISO(rental.due_date);
+              if (!rental) return null;
+              const dueDate = rental.due_date ? parseISO(rental.due_date) : null;
               return (
               <TableRow key={rental.id}>
                 <TableCell className="font-medium">{rental.shop_name}</TableCell>
-                <TableCell className="hidden md:table-cell">{rental.tenant_name}</TableCell>
+                <TableCell className="hidden md:table-cell">{rental.tenant_name || 'N/A'}</TableCell>
                 <TableCell>
                   {rental.rent_amount ? `₦${rental.rent_amount.toLocaleString()}`: 'N/A'}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={isPast(dueDate) ? "destructive" : "outline"}>
-                    {format(dueDate, "MMM dd, yyyy")}
-                  </Badge>
+                  {dueDate ? (
+                    <Badge variant={isPast(dueDate) ? "destructive" : "outline"}>
+                      {format(dueDate, "MMM dd, yyyy")}
+                    </Badge>
+                  ) : (
+                    'N/A'
+                  )}
                 </TableCell>
                 <TableCell>
                   <AlertDialog>

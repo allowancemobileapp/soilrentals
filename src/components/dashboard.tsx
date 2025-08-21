@@ -45,13 +45,14 @@ export default function Dashboard() {
     fetchRentals();
   }, [toast]);
 
-  const safeRentals = (rentals || []).filter(r => r && r.due_date);
+  const safeRentals = (rentals || []).filter(r => r);
 
   const totalRentals = safeRentals.length;
   const topState = safeRentals.length > 0 && safeRentals.some(r => r.state)
     ? Object.entries(safeRentals.filter(r => r.state).reduce((acc, r) => ({ ...acc, [r.state!]: (acc[r.state!] || 0) + 1 }), {} as Record<string, number>))
       .sort((a, b) => b[1] - a[1])[0][0]
     : "N/A";
+
   const upcomingDues = safeRentals.filter(r => {
       if (!r.due_date) return false;
       const dueDate = parseISO(r.due_date);
@@ -66,7 +67,7 @@ export default function Dashboard() {
     return matchesSearch && matchesState;
   });
   
-  const handleAddRental = async (newRentalData: Omit<RentalInsert, 'user_id'>) => {
+  const handleAddRental = async (newRentalData: RentalInsert) => {
     try {
       const newRental = await addRental(newRentalData);
       setRentals(prev => [newRental, ...prev]);

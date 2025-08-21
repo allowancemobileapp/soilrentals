@@ -23,7 +23,7 @@ export const getRentals = async (): Promise<Rental[]> => {
   return data || [];
 };
 
-export const addRental = async (rental: Omit<RentalInsert, 'user_id'>): Promise<Rental> => {
+export const addRental = async (rental: RentalInsert): Promise<Rental> => {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -31,9 +31,10 @@ export const addRental = async (rental: Omit<RentalInsert, 'user_id'>): Promise<
     throw new AuthError("User not authenticated. Please log in again.");
   }
   
-  const rentalWithUser: RentalInsert = {
+  const rentalWithUser = {
     ...rental,
     user_id: user.id,
+    due_date: rental.due_date || null,
   };
 
   const { data, error } = await supabase
@@ -45,6 +46,10 @@ export const addRental = async (rental: Omit<RentalInsert, 'user_id'>): Promise<
   if (error) {
     console.error('Supabase insert error:', error);
     throw new Error(`Database error: ${error.message}`);
+  }
+  
+  if (!data) {
+    throw new Error('Failed to create rental: No data returned from database.');
   }
 
   return data;

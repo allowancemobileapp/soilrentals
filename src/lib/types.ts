@@ -5,9 +5,9 @@ export interface Rental {
   tenant_name: string | null;
   state: string | null;
   rent_amount: number | null;
-  due_date: string;
+  due_date: string | null;
   created_at?: string;
 }
 
-export type RentalInsert = Omit<Rental, 'id' | 'created_at'>;
+export type RentalInsert = Omit<Rental, 'id' | 'created_at' | 'user_id'>;
 export type RentalUpdate = Partial<Omit<Rental, 'id' | 'created_at' | 'user_id'>>;
