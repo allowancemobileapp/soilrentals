@@ -17,4 +17,4 @@ export interface Rental {
 }
 
 export type RentalInsert = Omit<Rental, 'id' | 'created_at' | 'updated_at'>;
-export type RentalUpdate = Partial<Omit<Rental, 'id' | 'created_at' | 'updated_at' | 'owner_id'>>;
+export type RentalUpdate = Partial<Omit<Rental, 'id' | 'created_at' | 'updated_at'>>;
