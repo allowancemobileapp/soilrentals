@@ -33,6 +33,7 @@ import {
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { format, isPast, parseISO, isBefore, addMonths } from 'date-fns';
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface RentalTableProps {
   rentals: Rental[];
@@ -41,6 +42,14 @@ interface RentalTableProps {
 }
 
 export default function RentalTable({ rentals, onEdit, onDelete }: RentalTableProps) {
+  const isMobile = useIsMobile();
+
+  const handleRowClick = (rental: Rental) => {
+    if (isMobile) {
+      onEdit(rental);
+    }
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -65,13 +74,13 @@ export default function RentalTable({ rentals, onEdit, onDelete }: RentalTablePr
               if (dueDate) {
                 const now = new Date();
                 const oneMonthFromNow = addMonths(now, 1);
-                if (isPast(dueDate) || (isBefore(dueDate, oneMonthFromNow) && !isPast(dueDate))) {
+                if (isPast(dueDate) || (isBefore(dueDate, oneMonthFromNow))) {
                    badgeVariant = "destructive";
                 }
               }
 
               return (
-              <TableRow key={rental.id}>
+              <TableRow key={rental.id} onClick={() => handleRowClick(rental)} className={isMobile ? 'cursor-pointer' : ''}>
                 <TableCell className="font-medium">{rental.shop_name}</TableCell>
                 <TableCell className="hidden md:table-cell">{rental.tenant_name || 'N/A'}</TableCell>
                 <TableCell>
@@ -86,7 +95,7 @@ export default function RentalTable({ rentals, onEdit, onDelete }: RentalTablePr
                     'N/A'
                   )}
                 </TableCell>
-                <TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
                   <AlertDialog>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -140,5 +149,3 @@ export default function RentalTable({ rentals, onEdit, onDelete }: RentalTablePr
     </div>
   );
 }
-
-    
