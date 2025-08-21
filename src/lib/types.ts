@@ -1,3 +1,4 @@
+
 export interface Rental {
   id: string;
   user_id: string;
@@ -11,3 +12,10 @@ export interface Rental {
 
 export type RentalInsert = Omit<Rental, 'id' | 'created_at' | 'user_id'>;
 export type RentalUpdate = Partial<Omit<Rental, 'id' | 'created_at' | 'user_id'>>;
+
+export interface Name {
+  id: string;
+  user_id: string;
+  name: string;
+  created_at?: string;
+}

@@ -1,9 +1,10 @@
+
 "use client";
 
 import * as React from "react";
 import { Calendar, Home, Loader2, MapPin, PlusCircle, Search, FileDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Rental } from "@/lib/types";
+import type { Rental, Name } from "@/lib/types";
 import { add, parseISO } from "date-fns";
 import RentalTable from "./rental-table";
 import { Button } from "./ui/button";
@@ -12,13 +13,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
 import RentalForm from "./rental-form";
 import { NIGERIAN_STATES } from "@/lib/nigerian-states";
-import { getRentals, addRental, updateRental, deleteRental } from "@/lib/supabase/database";
+import { getRentals, addRental, updateRental, deleteRental, addName, getNames } from "@/lib/supabase/database";
 import { useToast } from "@/hooks/use-toast";
 import type { RentalInsert, RentalUpdate } from '@/lib/types';
 
 
 export default function Dashboard() {
   const [rentals, setRentals] = React.useState<Rental[]>([]);
+  const [names, setNames] = React.useState<Name[]>([]);
+  const [newName, setNewName] = React.useState("");
   const [search, setSearch] = React.useState("");
   const [stateFilter, setStateFilter] = React.useState("all");
   const [isLoading, setIsLoading] = React.useState(true);
@@ -27,23 +30,47 @@ export default function Dashboard() {
   const { toast } = useToast();
 
   React.useEffect(() => {
-    const fetchRentals = async () => {
+    const fetchData = async () => {
       try {
         setIsLoading(true);
-        const fetchedRentals = await getRentals();
+        const [fetchedRentals, fetchedNames] = await Promise.all([
+          getRentals(),
+          getNames()
+        ]);
         setRentals(fetchedRentals || []);
+        setNames(fetchedNames || []);
       } catch (error) {
         toast({
           variant: "destructive",
           title: "Error fetching data",
-          description: "Could not load rentals from the database.",
+          description: "Could not load data from the database.",
         });
       } finally {
         setIsLoading(false);
       }
     };
-    fetchRentals();
+    fetchData();
   }, [toast]);
+
+  const handleAddName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    try {
+      const addedName = await addName(newName.trim());
+      setNames(prev => [addedName, ...prev]);
+      setNewName("");
+      toast({
+        title: "Success",
+        description: "Name added successfully.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error Adding Name",
+        description: (error as Error).message || "An unknown error occurred.",
+      });
+    }
+  };
 
   const safeRentals = (rentals || []).filter(r => r);
 
@@ -55,8 +82,12 @@ export default function Dashboard() {
 
   const upcomingDues = safeRentals.filter(r => {
       if (!r.due_date) return false;
-      const dueDate = parseISO(r.due_date);
-      return dueDate > new Date() && dueDate <= add(new Date(), { days: 30 });
+      try {
+        const dueDate = parseISO(r.due_date);
+        return dueDate > new Date() && dueDate <= add(new Date(), { days: 30 });
+      } catch (e) {
+        return false;
+      }
     }).length;
 
   const filteredRentals = safeRentals.filter(rental => {
@@ -174,7 +205,33 @@ export default function Dashboard() {
   
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+      <Card>
+        <CardHeader>
+          <CardTitle>Database Insertion Test</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleAddName} className="flex items-center gap-2">
+            <Input 
+              placeholder="Enter a name to save" 
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+            />
+            <Button type="submit">Save Name</Button>
+          </form>
+          <div className="mt-4">
+            <h3 className="font-semibold">Names in Database:</h3>
+            {names.length > 0 ? (
+              <ul className="list-disc pl-5 mt-2">
+                {names.map(name => <li key={name.id}>{name.name}</li>)}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground mt-2">No names found. Add one to test.</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3 mt-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Rentals</CardTitle>
