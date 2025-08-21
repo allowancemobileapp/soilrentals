@@ -39,12 +39,15 @@ export const addName = async (name: string): Promise<Name> => {
     user_id: user.id,
   };
 
+  // Perform the insert and select in one go.
   const { data, error } = await supabase
     .from('names')
     .insert(nameWithUser)
     .select()
     .single();
 
+  // This is the critical error check. If the database returns an error,
+  // we throw it, which will be caught by the calling component.
   if (error) {
     console.error('Supabase insert error (addName):', error);
     throw new Error(`Database error: ${error.message}`);
